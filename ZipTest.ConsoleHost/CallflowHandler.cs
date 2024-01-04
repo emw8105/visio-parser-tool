@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ArchitectConvert.ConsoleHost;
+using System;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.Linq;
@@ -26,6 +27,12 @@ namespace VisioParse.ConsoleHost
         public StreamWriter PageInfoFile;
         public StreamWriter PathOutputFile;
 
+        // generated at runtime from user input
+        public string? NodeOption = string.Empty;
+        public string? StartNodeContent = string.Empty;
+        public string? EndNodeContent = string.Empty;
+
+
         public CallflowHandler()
         {
             YamlFilePath = Path + @"Documents\" + YamlFileName;
@@ -40,6 +47,54 @@ namespace VisioParse.ConsoleHost
             string pathsFilePath = System.IO.Path.Combine(Path, "paths_" + FileName + ".txt");
             File.WriteAllText(pathsFilePath, "Beginning output\n");
             PathOutputFile = File.AppendText(pathsFilePath);
+        }
+        public void ConfigurationSetup()
+        {
+            Console.WriteLine("Please select a menu option:" +
+                "\n1. Convert a Genesys Architect flow into Visio" +
+                "\n2. Parse Visio information with specified start and end nodes  (more precise)" + // can ask user to use text or a master ID
+                "\n3. Parse Visio information indiscriminately  (less precise)");
+
+            string? menuChoice = Console.ReadLine();
+            switch (menuChoice)
+            {
+                case "1":
+                    // call the class, pass the converter the input .yaml file and the output string
+                    // intention is to convert yaml files into visio files, then can use subsequent logic in this project to parse the generated visio
+                    FileConverter converter = new FileConverter();
+                    string outputPath = Path + "converted";
+                    converter.ConvertToVisio(YamlFileName, outputPath);
+                    break;
+                case "2":
+                    Console.WriteLine("Choose your ideal method of determining start nodes based on your Visio structure:" +
+                        "\n1. Parse based on a master shape ID (a specific shape used)" +
+                        "\n2. Parse based on text (ex: Start)");
+                    string? startNodeChoice = Console.ReadLine();
+                    switch (startNodeChoice)
+                    {
+                        case "1":
+                            NodeOption = "1"; // represents parsing via master shape ID
+                            Console.WriteLine("Please enter the Master ID of the shape to use as starting nodes");
+                            StartNodeContent = Console.ReadLine();
+                            Console.WriteLine("Please enter the Master ID of the shape to use as ending nodes");
+                            EndNodeContent = Console.ReadLine();
+                            break;
+                        case "2":
+                            NodeOption = "2"; // represents parsing via text
+                            Console.WriteLine("Please enter the text of the shape to use as starting nodes");
+                            StartNodeContent = Console.ReadLine();
+                            Console.WriteLine("Please enter the text of the shape to use as starting nodes");
+                            EndNodeContent = Console.ReadLine();
+                            break;
+                        default:
+                            NodeOption = "0"; // represents indiscriminate parsing, although it's the default case rather than explicitely evaluated
+                            Console.WriteLine("Choice not recognized, parsing indiscriminately instead");
+                            break;
+                    }
+                    break;
+                default: // indiscriminate parsing is the default
+                    break;
+            }
         }
         public void ExecutionCleanup()
         {

@@ -1,0 +1,62 @@
+﻿// TDL:
+// track number of paths per page to calculate number of test cases to write - done
+// don't add any vertex with no incoming or outgoing edges to reduce clutter - done
+// convert all the strings representing shapes (using the ID) into XML objects - done
+// clean up and functionalize the program - done
+// mapping (change all text in the xml to the ID and recompress it?) - done
+// also print out the paths as text for quick reference - done
+// clean up what goes into the output file to be useful for searching data - outputs split to categorize them, done
+// option menu implemented to enable user to specify runtime parameters and add configurations - done
+// check start nodes for text or a specific master shape (can use option menu) - done
+
+// try to implement checkpoints (not sure if it's useful, would probably need to just ask the user to parse the tree of references starting from one given page)
+    // would make the graph an array of graphs with indexes as page numbers, when a shape has a certain master,
+    // then could scan the text to see the location to jump to
+    // would need to make enabling the checkpoints a configuration option where the master ID would need to be specified and the text follows some format
+// can check if a starting node has a path that is contained within another path
+// figure out how to parse .yaml files for genesys architect and see if it can be recreated in visio
+// consider any other data that would be useful to parse and perform some algorithm on
+// create guidelines or a template for example usage that the tool can handle, likely whatever excel supports
+
+// parse off-page references - put everything into an array, if a reference is found then save it to a list
+    // references that point to a page will just go to the start node, references that 
+// find MINIMUM number of paths to test each visio (traverse each edge) - might be able to achieve with path reduction
+
+// issue: nodes that can act as pesudo starting point such as a db table, can multiply the amount of paths - kind of patched by allowing specified start points
+
+
+// Notes and Documentation:
+// This POC exists to show the process of taking an input .vsdx visio file, unzipping it into it's xml components,
+// and parsing through them to find the original diagram data.
+
+// When running, there is a Console.ReadLine line meant to stop the program after the files have been extracted and parsed.
+// First, navigate to the extracted folder --> visio --> pages, there you will find the pages of the visio file with the contained shape information.
+// Shapes have various properties including id, type, master, text, positional data, etc., but not all shapes have all of these (except for ID).
+// ex: <PageContents> --> <Shapes> --> <Shape ID = '1' Type='Shape' Master = '2'> --> ... <Text>
+
+// Sometimes, we can have <Shapes> --> ... --> <Shapes>, i.e. nested shapes, these shapes don't have various data such as a type or positional info, so
+// they need to be handled separately although their use case is rare, ex: page 83 of ECC IVR Call Flow V104.1_updated.vsdx has a few of these nested shapes.
+
+// Relationships between shapes are found in the Connects tab of the xml file following the shapes:
+// <PageContents> --> <Connects> --> <Connect FromSheet='15' FromCell='BeginX' FromPart='9' ToSheet='14' ToCell='PinX' ToPart='3'/>
+// i.e. source shape w/ ID 15 connects to the target shape w/ ID 14, using the 9th node from the source shape and the 3rd node from the target shape
+// connections come in pairs of 2 because the graph is directional, the 'FromCell' value of origin nodes is 'BeginX' and destination nodes have a value of 'EndX'
+
+// Relationships between parts within the package are found in the _rels folder from the extraction
+
+// To show all of the pages, the page count is calculated from the "pages.xml" file within the same folder as the actual pages (page1, page2, etc)
+// Parse thru <Pages> and count the number of "Page" attributes to find the number of extracted pages
+// Then begin reading the page files and loop through the pages to extract their information
+
+// this approach to parsing page information is used to parse the master shape files as well
+
+// Translating to a graph:
+// each page has it's own unique Shape ID's, but some of them are edges stored as connections and some of them are vertices
+// to determine which is which, loop through a page's connections and find which ID's are being used to represent a connection and store it as an edge
+// then create a vertex for each shape THAT IS NOT AN EDGE
+// print the graph at the end of the page
+// each visio file has a start and end point, my method for determining them is to find nodes which have only incoming or outgoing edges respectively
+// however, this may not work considering some visio files have a break point that is used to show the flow entering from somewhere else
+// use the corresponding graph to find all paths from the start to the end
+
+// feel free to use the output files to redirect overflowing console output for larger visio files with several pages
