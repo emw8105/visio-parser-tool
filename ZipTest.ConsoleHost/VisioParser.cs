@@ -29,13 +29,13 @@ namespace VisioParse.ConsoleHost
             // Configuration options
             callflow.ConfigurationSetup();
 
-            Console.WriteLine("extracting file to " + callflow.ExtractPath);
-            ZipFile.ExtractToDirectory(callflow.ZipPath, callflow.ExtractPath); // convert given visio file to xml components
-            Console.WriteLine("finished extraction, parsing components...");
-
-            // read extracted xml file contents
+            // extract and read xml file contents
             try
             {
+                Console.WriteLine("extracting file to " + callflow.ExtractPath);
+                ZipFile.ExtractToDirectory(callflow.ZipPath, callflow.ExtractPath); // convert given visio file to xml components
+                Console.WriteLine("finished extraction, parsing components...");
+
                 // first parse "pages.xml" to find page count
                 XDocument pagesXml;
                 using (XmlTextReader documentReader = new XmlTextReader(callflow.ExtractPath + @"\visio\pages\pages.xml"))
