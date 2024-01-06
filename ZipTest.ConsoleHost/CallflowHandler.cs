@@ -17,7 +17,7 @@ namespace VisioParse.ConsoleHost
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "Improved Inbound Routing Design v1.18.vsdx";
+        public string FileName = "ECC IVR Call Flow V104.1_updated.vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor
@@ -118,9 +118,23 @@ namespace VisioParse.ConsoleHost
                     input = Console.ReadLine(); // readline to allow for inspecting the file and delete when done
                     if (input == "d")
                     {
-                        File.Delete(newVisioPath);
-                        Directory.Delete(ExtractPath, true);
-                        Console.WriteLine("\nExtracted visio and files have been deleted");
+                        try
+                        {
+                            File.Delete(newVisioPath);
+                            Directory.Delete(ExtractPath, true);
+                            Console.WriteLine("\nExtracted visio and files have been deleted");
+                        }
+                        catch (Exception) // this is temporary because I kept forgetting and trying to delete it without closing, do a loop in the future
+                        {
+                            Console.WriteLine("Modified Visio file must be closed before deleting, please close the file before attempting to delete again");
+                            string? retry = Console.ReadLine(); // readline to allow for inspecting the file and delete when done
+                            if (retry == "d")
+                            {
+                                File.Delete(newVisioPath);
+                                Directory.Delete(ExtractPath, true);
+                                Console.WriteLine("\nExtracted visio and files have been deleted");
+                            }
+                        }
                     }
                     break;
                 case "3": // note that the "extracted" folder will need to be moved or deleted by hand so that the program can run again

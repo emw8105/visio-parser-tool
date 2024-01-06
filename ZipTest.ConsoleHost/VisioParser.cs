@@ -11,6 +11,7 @@ using System.Reflection.Metadata;
 using System.IO.Compression;
 using System.IO.MemoryMappedFiles;
 using ArchitectConvert.ConsoleHost;
+using System.Drawing;
 
 // Written by Evan Wright
 
@@ -51,11 +52,13 @@ namespace VisioParse.ConsoleHost
 
                 XDocument xmlDoc; // used for current xml being parsed
 
+                DirectedMultiGraph<VertexShape, EdgeShape>[] pageGraphs = new DirectedMultiGraph<VertexShape, EdgeShape>[pageCount];
+
                 // pages start at page1 and go up to and including the page count
                 for (int i = 1; i <= pageCount; i++)
                 {
                     Console.WriteLine($"Parsing page {i}");
-                    callflow.PageInfoFile.WriteLine($"\nPage {i}:");
+                    callflow.PageInfoFile.WriteLine($"\n----Page {i}----");
 
                     using (XmlTextReader reader = new XmlTextReader(callflow.ExtractPath + @"\visio\pages\page" + i + ".xml"))
                     {
@@ -90,8 +93,9 @@ namespace VisioParse.ConsoleHost
                     // this is used to assign the edge placements in the graph themselves using their stored data
                     AssignEdges(pageEdges, graph);
 
-                    // sometimes tables and other extra visual elements are added as shapes, remove them to reduce clutter
+                    // sometimes tables and other extra visual elements are added as shapes, remove them to reduce clutter and save the graph
                     graph.RemoveZeroDegreeNodes();
+                    pageGraphs[i-1] = graph;   
 
                     // print out the graph data parsed from the page
                     callflow.PageInfoFile.WriteLine($"Page {i} has {graph.Vertices.Count} vertices and {graph.NumberOfEdges} edges");
@@ -147,6 +151,7 @@ namespace VisioParse.ConsoleHost
 
         static int GetAllPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file, string nodeOption, string? startNodeContent, string? endNodeContent, int pageNum)
         {
+            // first get the start and end nodes based on user specification
             IEnumerable<VertexShape>? startNodes;
             IEnumerable<VertexShape>? endNodes;
             GetSpecifiedNodes(graph, nodeOption, startNodeContent, endNodeContent, out startNodes, out endNodes);
@@ -162,13 +167,14 @@ namespace VisioParse.ConsoleHost
             endNodes.ToList().ForEach(node => Console.Write($"{node.Id}, "));
             Console.WriteLine();
 
-            // list containing the nodes of each path
+            // list containing the paths containing each node
             var allPaths = new List<List<VertexShape>>();
 
             //file.WriteLine("\nPaths:");
             int numPaths = 0;
             int count = 1;
 
+            // find every path from every start node to every end node
             foreach (var startNode in startNodes)
             {
                 foreach (var endNode in endNodes)
@@ -190,22 +196,27 @@ namespace VisioParse.ConsoleHost
                 }
             }
 
-            count = 1;
-            file.WriteLine("\nText for above paths:");
-            foreach (var path in allPaths)
-            {
-                file.Write($"{count}. ");
-                foreach (var node in path)
-                {
-                    if (node.Text != null)
-                    {
-                        file.Write($"{node.Text.Trim('\0')} -> ");
-                    }
-                }
-                file.WriteLine();
-                count++;
-            }
-            file.WriteLine($"Total number of paths on page {pageNum} to test: {numPaths}"); 
+            // print the text for every path, not very necessary
+            //count = 1;
+            //file.WriteLine("\nText for above paths:");
+            //foreach (var path in allPaths)
+            //{
+            //    file.Write($"{count}. ");
+            //    foreach (var node in path)
+            //    {
+            //        if (node.Text != null)
+            //        {
+            //            file.Write($"{node.Text.Trim('\0')} -> ");
+            //        }
+            //    }
+            //    file.WriteLine();
+            //    count++;
+            //}
+            var minimalPathSet = GetMinimumPaths(graph, allPaths, file);
+            file.WriteLine($"Total number of minimal paths on page {pageNum} to cover all edges: {minimalPathSet.Count}");
+
+            file.WriteLine($"Total number of paths on page {pageNum} to test: {numPaths}");
+
             return numPaths;
         }
 
@@ -246,7 +257,72 @@ namespace VisioParse.ConsoleHost
                 currentPath.RemoveAt(currentPath.Count - 1);
             }
         }
-        
+
+        static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
+        {
+            // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
+            var uniqueEdges = graph.Edges.Distinct().ToList();
+            HashSet<EdgeShape> coveredEdges = new HashSet<EdgeShape>();
+
+            // list of minimal paths covering all unique edges
+            var minimalPathSet = new List<List<VertexShape>>();
+
+            // loop through paths and add to minimalPathSet if it covers a unique edge
+            foreach (var path in allPaths)
+            {
+                var pathCoversUniqueEdge = false;
+
+                for (int i = 0; i < path.Count - 1; i++)
+                {
+                    VertexShape source = path[i];
+                    VertexShape target = path[i + 1];
+
+                    // find the edge from source to target
+                    if (graph.GetEdges(source, target).Any(edge => uniqueEdges.Contains(edge) && !coveredEdges.Contains(edge)))
+                    {
+                        pathCoversUniqueEdge = true;
+                        coveredEdges.UnionWith(graph.GetEdges(source, target));
+                    }
+                }
+
+                if (pathCoversUniqueEdge)
+                {
+                    minimalPathSet.Add(path);
+                }
+            }
+
+            // print the minimal paths
+            int count = 1;
+            file.WriteLine("\nMinimal paths covering all unique edges:");
+            foreach (var path in minimalPathSet)
+            {
+                file.Write($"{count}. ");
+                foreach (var node in path)
+                {
+                    file.Write($"{node.Id} -> ");
+                }
+                file.WriteLine();
+                count++;
+            }
+            count = 1;
+            file.WriteLine("\nText for above paths:");
+            foreach (var path in allPaths)
+            {
+                file.Write($"{count}. ");
+                foreach (var node in path)
+                {
+                    if (node.Text != null)
+                    {
+                        file.Write($"{node.Text.Trim('\0')} -> ");
+                    }
+                }
+                file.WriteLine();
+                count++;
+            }
+
+            return minimalPathSet;
+        }
+
         static void MatchConnections(IEnumerable<XElement>? connections, HashSet<string> connectionShapes, List<EdgeShape> pageEdges)
         {
             // create two dictionaries, load all connections into each, then match them together based on shapeID or their "FromSheet" value to create an edge
