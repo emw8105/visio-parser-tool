@@ -14,6 +14,7 @@ using ArchitectConvert.ConsoleHost;
 using System.Drawing;
 
 // Written by Evan Wright
+// easy TDL for monday: fix print statements (seems to only print text), make a counter for minimum paths, prevent prints when there's no paths to reduce clutter
 
 namespace VisioParse.ConsoleHost
 {
@@ -103,7 +104,7 @@ namespace VisioParse.ConsoleHost
                     PrintPageInformation(graph, callflow.PageInfoFile);
 
                     // find the permutations, every path from every starting node to every ending node, each path is a test case
-                    callflow.PathOutputFile.WriteLine($"\nPaths of page {i}:");
+                    callflow.PathOutputFile.WriteLine($"\n----Paths of page {i}----");
                     int numPaths = GetAllPermutations(graph, callflow.PathOutputFile, callflow.NodeOption, callflow.StartNodeContent, callflow.EndNodeContent, i);
                     callflow.PageInfoFile.WriteLine($"Number of paths to test: {numPaths}");
                     Console.WriteLine($"Number of paths to test: {numPaths}");
@@ -183,35 +184,10 @@ namespace VisioParse.ConsoleHost
                     allPaths.AddRange(permutations);
                     numPaths += permutations.Count;
 
-                    foreach (var currentPath in permutations)
-                    {
-                        file.Write($"{count}. ");
-                        foreach (var node in currentPath)
-                        {
-                            file.Write($"{node.Id} -> ");
-                        }
-                        file.WriteLine();
-                        count++;
-                    }
+                    PrintPathInformation(permutations, file, "Id");
                 }
             }
 
-            // print the text for every path, not very necessary
-            //count = 1;
-            //file.WriteLine("\nText for above paths:");
-            //foreach (var path in allPaths)
-            //{
-            //    file.Write($"{count}. ");
-            //    foreach (var node in path)
-            //    {
-            //        if (node.Text != null)
-            //        {
-            //            file.Write($"{node.Text.Trim('\0')} -> ");
-            //        }
-            //    }
-            //    file.WriteLine();
-            //    count++;
-            //}
             var minimalPathSet = GetMinimumPaths(graph, allPaths, file);
             file.WriteLine($"Total number of minimal paths on page {pageNum} to cover all edges: {minimalPathSet.Count}");
 
@@ -292,33 +268,10 @@ namespace VisioParse.ConsoleHost
             }
 
             // print the minimal paths
-            int count = 1;
             file.WriteLine("\nMinimal paths covering all unique edges:");
-            foreach (var path in minimalPathSet)
-            {
-                file.Write($"{count}. ");
-                foreach (var node in path)
-                {
-                    file.Write($"{node.Id} -> ");
-                }
-                file.WriteLine();
-                count++;
-            }
-            count = 1;
+            PrintPathInformation(minimalPathSet, file, "Id");
             file.WriteLine("\nText for above paths:");
-            foreach (var path in allPaths)
-            {
-                file.Write($"{count}. ");
-                foreach (var node in path)
-                {
-                    if (node.Text != null)
-                    {
-                        file.Write($"{node.Text.Trim('\0')} -> ");
-                    }
-                }
-                file.WriteLine();
-                count++;
-            }
+            PrintPathInformation(minimalPathSet, file, "Text");
 
             return minimalPathSet;
         }
@@ -513,6 +466,41 @@ namespace VisioParse.ConsoleHost
             //    }
             //    file.WriteLine();
             //}
+        }
+
+        static void PrintPathInformation(List<List<VertexShape>> pathSet, StreamWriter file, string property)
+        {
+            int count = 1;
+            switch (property)
+            {
+                case "Text":
+                    foreach (var path in pathSet)
+                    {
+                        file.Write($"{count}. ");
+                        foreach (var node in path)
+                        {
+                            file.Write($"{node.Text} -> ");
+                        }
+                        file.WriteLine();
+                        count++;
+                    }
+                    break;
+                case "Id":
+                    foreach (var path in pathSet)
+                    {
+                        file.Write($"{count}. ");
+                        foreach (var node in path)
+                        {
+                            file.Write($"{node.Text} -> ");
+                        }
+                        file.WriteLine();
+                        count++;
+                    }
+                    break;
+                default:
+                    Console.WriteLine($"Unrecognized property to print: {property}");
+                    break;
+            }
         }
     }
 }

@@ -60,3 +60,11 @@
 // use the corresponding graph to find all paths from the start to the end
 
 // feel free to use the output files to redirect overflowing console output for larger visio files with several pages
+
+
+IDEAL VISIO DESIGN PRACTICES
+- Don't make dense flows, make long ones (i.e. shapes shouldn't have paragraphs of text, the more concise the file is the better it will be for readability later, split into multiple shapes if necessary)
+- Make sure that all connections are actually connected
+- Non-directed connections won't be used for test case calculation, they can be used to label things for human-readable portions but not for parsing
+- Make sure that all off-page references have their links attached properly or else the parser can't build a multi-flow path
+- STICK TO ONE FORMAT FOR STARTING AND ENDING NODES
