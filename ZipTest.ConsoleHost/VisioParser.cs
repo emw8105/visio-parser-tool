@@ -82,7 +82,7 @@ namespace VisioParse.ConsoleHost
                     var pathCount = pathSet.Count;
 
                     // find the minimum paths for test cases
-                    if(pathSet.Count >0)
+                    if(pathSet.Count > 0)
                     {
                         var minPathSet = GetMinimumPaths(graph, pathSet, callflow.PathOutputFile);
                         var minPathCount = minPathSet.Count;
@@ -98,19 +98,23 @@ namespace VisioParse.ConsoleHost
                 Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
                 Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
                 callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
+
+                callflow.PageInfoFile.Flush();
+                callflow.PageInfoFile.Close();
+                callflow.PathOutputFile.Flush();
+                callflow.PathOutputFile.Close();
+
+                callflow.ExecutionCleanup();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
+
+                callflow.PageInfoFile.Flush();
+                callflow.PageInfoFile.Close();
+                callflow.PathOutputFile.Flush();
+                callflow.PathOutputFile.Close();
             }
-
-
-            callflow.PageInfoFile.Flush();
-            callflow.PageInfoFile.Close();
-            callflow.PathOutputFile.Flush();
-            callflow.PathOutputFile.Close();
-
-            callflow.ExecutionCleanup();
         }
 
         static DirectedMultiGraph<VertexShape, EdgeShape> BuildGraph(XDocument xmlDoc, CallflowHandler callflow, int pageNum)

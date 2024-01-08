@@ -17,7 +17,7 @@ namespace VisioParse.ConsoleHost
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "Inbound Routing Design v1.18.vsdx";
+        public string FileName = "Improved Inbound Routing Design v1.18.vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor
@@ -54,7 +54,6 @@ namespace VisioParse.ConsoleHost
                 "\n1. Convert a Genesys Architect flow into Visio" +
                 "\n2. Parse Visio information with specified start and end nodes  (more precise)" + // can ask user to use text or a master ID
                 "\n3. Parse Visio information indiscriminately  (less precise)");
-
             string? menuChoice = Console.ReadLine();
             switch (menuChoice)
             {
