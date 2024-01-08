@@ -14,7 +14,6 @@ using ArchitectConvert.ConsoleHost;
 using System.Drawing;
 
 // Written by Evan Wright
-// easy TDL for monday: make a counter for minimum paths
 
 namespace VisioParse.ConsoleHost
 {
@@ -47,6 +46,7 @@ namespace VisioParse.ConsoleHost
                 var pages = pagesXml.Descendants(ns + "Page");
                 int pageCount = pages.Count();
                 int pathCountTotal = 0;
+                int minPathCountTotal = 0;
 
                 Console.WriteLine($"Total number of pages: {pageCount}");
                 callflow.PageInfoFile.WriteLine($"Total number of pages: {pageCount}");
@@ -66,36 +66,7 @@ namespace VisioParse.ConsoleHost
                         xmlDoc = XDocument.Load(reader);
                     }
 
-                    // shapes include both vertices and edges, some pages have separate shapes within shapes that are missing various properties, must handle if using this
-                    // var shapes = xmlDoc.Root.Element(ns + "Shapes").Elements(ns + "Shape"); // use this parsing instead to only get top-level shapes
-                    var shapes = xmlDoc.Descendants(ns + "Shape");
-                    var connections = xmlDoc.Descendants(ns + "Connect");
-
-                    DirectedMultiGraph<VertexShape, EdgeShape> graph = new DirectedMultiGraph<VertexShape, EdgeShape>(); // different graph for each page
-
-                    // need to separate the shapes into different categories for graph functionality
-                    // need to compute edges first because connections are recorded as shapes, don't want to add an edge as a vertex
-                    var connectionShapes = new HashSet<string>();
-                    List<VertexShape> pageShapes = new List<VertexShape>();
-                    List<EdgeShape> pageEdges = new List<EdgeShape>();
-
-                    // edges are stored as a pair of connections, must parse both to find the origin node and the destination node
-                    // once a pair of connections is found, we store it as an edge
-                    MatchConnections(connections, connectionShapes, pageEdges);
-
-                    // Extract and print shape information from the current page, convert each non-edge shape into a vertex
-                    ExtractShapeToVertex(graph, shapes, connectionShapes, callflow.PageInfoFile);
-
-                    // when shapes are converted to vertices, the text is edited so save the edited page
-                    xmlDoc.Save(callflow.ExtractPath + @"\visio\pages\page" + i + ".xml");
-
-                    // unfortunately, can't add an edge without the vertex existing
-                    // but can't add vertexes until we determine which shapes are connections
-                    // this is used to assign the edge placements in the graph themselves using their stored data
-                    AssignEdges(pageEdges, graph);
-
-                    // sometimes tables and other extra visual elements are added as shapes, remove them to reduce clutter and save the graph
-                    graph.RemoveZeroDegreeNodes();
+                    var graph = BuildGraph(xmlDoc, callflow, i);
                     pageGraphs[i-1] = graph;   
 
                     // print out the graph data parsed from the page
@@ -106,8 +77,8 @@ namespace VisioParse.ConsoleHost
                     // find the permutations, every path from every starting node to every ending node, each path is a test case
                     callflow.PathOutputFile.WriteLine($"\n----Paths of page {i}----");
                     int numPaths = GetAllPermutations(graph, callflow.PathOutputFile, callflow.NodeOption, callflow.StartNodeContent, callflow.EndNodeContent, i);
-                    callflow.PageInfoFile.WriteLine($"Number of paths to test: {numPaths}");
-                    Console.WriteLine($"Number of paths to test: {numPaths}");
+                    callflow.PageInfoFile.WriteLine($"Number of paths to test: {numPaths}\n");
+                    Console.WriteLine($"Number of paths to test: {numPaths}\n");
                     pathCountTotal += numPaths;
                 }
                 Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
@@ -125,6 +96,42 @@ namespace VisioParse.ConsoleHost
             callflow.PathOutputFile.Close();
 
             callflow.ExecutionCleanup();
+        }
+
+        static DirectedMultiGraph<VertexShape, EdgeShape> BuildGraph(XDocument xmlDoc, CallflowHandler callflow, int pageNum)
+        {
+            // shapes include both vertices and edges, some pages have separate shapes within shapes that are missing various properties, must handle if using this
+            // var shapes = xmlDoc.Root.Element(ns + "Shapes").Elements(ns + "Shape"); // use this parsing instead to only get top-level shapes
+            var shapes = xmlDoc.Descendants(ns + "Shape");
+            var connections = xmlDoc.Descendants(ns + "Connect");
+
+            DirectedMultiGraph<VertexShape, EdgeShape> graph = new DirectedMultiGraph<VertexShape, EdgeShape>(); // different graph for each page
+
+            // need to separate the shapes into different categories for graph functionality
+            // need to compute edges first because connections are recorded as shapes, don't want to add an edge as a vertex
+            var connectionShapes = new HashSet<string>();
+            List<VertexShape> pageShapes = new List<VertexShape>();
+            List<EdgeShape> pageEdges = new List<EdgeShape>();
+
+            // edges are stored as a pair of connections, must parse both to find the origin node and the destination node
+            // once a pair of connections is found, we store it as an edge
+            MatchConnections(connections, connectionShapes, pageEdges);
+
+            // Extract and print shape information from the current page, convert each non-edge shape into a vertex
+            ExtractShapeToVertex(graph, shapes, connectionShapes, callflow.PageInfoFile);
+
+            // when shapes are converted to vertices, the text is edited so save the edited page
+            xmlDoc.Save(callflow.ExtractPath + @"\visio\pages\page" + pageNum + ".xml");
+
+            // unfortunately, can't add an edge without the vertex existing
+            // but can't add vertexes until we determine which shapes are connections
+            // this is used to assign the edge placements in the graph themselves using their stored data
+            AssignEdges(pageEdges, graph);
+
+            // sometimes tables and other extra visual elements are added as shapes, remove them to reduce clutter and save the graph
+            graph.RemoveZeroDegreeNodes();
+
+            return graph;
         }
 
         static void GetSpecifiedNodes(DirectedMultiGraph<VertexShape, EdgeShape> graph, string nodeOption, string? startNodeContent, string? endNodeContent, out IEnumerable<VertexShape> startNodes, out IEnumerable<VertexShape> endNodes)
@@ -161,7 +168,6 @@ namespace VisioParse.ConsoleHost
             var allPaths = new List<List<VertexShape>>();
 
             int numPaths = 0;
-            int count = 1;
 
             // find every path from every start node to every end node
             foreach (var startNode in startNodes)
@@ -192,9 +198,9 @@ namespace VisioParse.ConsoleHost
                 PrintPathInformation(allPaths, file, "Id");
 
                 var minimalPathSet = GetMinimumPaths(graph, allPaths, file);
-
-                file.WriteLine($"Total number of minimal paths on page {pageNum} to cover all edges: {minimalPathSet.Count}");
-                file.WriteLine($"Total number of paths on page {pageNum} to test: {numPaths}");
+                
+                file.WriteLine($"\nTotal number of paths on Page {pageNum}: {numPaths}");
+                file.WriteLine($"Minimum number of paths on Page {pageNum} to cover all cases: {minimalPathSet.Count}");
 
             }
             else
@@ -337,7 +343,7 @@ namespace VisioParse.ConsoleHost
                 }
                 else
                 {
-                    Console.WriteLine($"Error: Found 'BeginX' without corresponding 'EndX'. Sheet: {fromSheetBegin}, please use single-directional arrows only");
+                    Console.WriteLine($"Error: Found 'BeginX' without corresponding 'EndX'. Sheet: {fromSheetBegin}, note that only directional arrows are parsed");
                 }
             }
 
@@ -346,7 +352,7 @@ namespace VisioParse.ConsoleHost
             {
                 string fromSheetEnd = endXConnection.Attribute("FromSheet").Value;
 
-                Console.WriteLine($"Error: Found 'EndX' without corresponding 'BeginX'. Sheet: {fromSheetEnd}, please use single-directional arrows only");
+                Console.WriteLine($"Error: Found 'EndX' without corresponding 'BeginX'. Sheet: {fromSheetEnd}, note that only directional arrows are parsed");
             }
         }
 
@@ -436,14 +442,22 @@ namespace VisioParse.ConsoleHost
 
         static void WriteShapeID(XElement shape)
         {
-            string shapeId = shape.Attribute("ID").Value;
-            string newText = $"ID: {shapeId}";
+            var shapeId = shape?.Attribute("ID")?.Value;
+            var masterId = shape?.Attribute("Master")?.Value;
+            var newText = $"ID: {shapeId}";
 
             // check if the text element exists and update its value
-            var textElement = shape.Element(ns + "Text");
-            if (textElement != null)
+            var textElement = shape?.Element(ns + "Text");
+            if (textElement is not null)
             {
-                textElement.Value = newText;
+                if(masterId is not null)
+                {
+                    textElement.Value = newText + $"\nMasterID: {masterId}";
+                }
+                else
+                {
+                    textElement.Value = newText;
+                }
             }
             else
             {
@@ -465,16 +479,6 @@ namespace VisioParse.ConsoleHost
                 file.WriteLine($"Edge: {edge.Id} connects vertex {edge.FromShape} to vertex {edge.ToShape}");
             }
             file.WriteLine();
-            //foreach (var vertex in graph.Vertices)
-            //{
-            //    file.Write($"Neighbors of Vertex: {vertex.Id} - ");
-            //    var neighbors = graph.GetNeighbors(vertex);
-            //    foreach (var neighbor in neighbors)
-            //    {
-            //        file.Write(neighbor.Id + ", ");
-            //    }
-            //    file.WriteLine();
-            //}
         }
 
         static void PrintPathInformation(List<List<VertexShape>> pathSet, StreamWriter file, string property)
@@ -483,7 +487,6 @@ namespace VisioParse.ConsoleHost
             switch (property)
             {
                 case "Id":
-                    Console.WriteLine($"Printing property: {property}");
                     foreach (var path in pathSet)
                     {
                         file.Write($"{count}. ");
@@ -496,7 +499,6 @@ namespace VisioParse.ConsoleHost
                     }
                     break;
                 case "Text":
-                    Console.WriteLine($"Printing property: {property}");
                     foreach (var path in pathSet)
                     {
                         file.Write($"{count}. ");

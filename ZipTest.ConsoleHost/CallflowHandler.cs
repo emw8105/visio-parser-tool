@@ -17,7 +17,7 @@ namespace VisioParse.ConsoleHost
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "ECC IVR Call Flow V104.1_updated.vsdx";
+        public string FileName = "Inbound Routing Design v1.18.vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor
@@ -98,52 +98,60 @@ namespace VisioParse.ConsoleHost
         }
         public void ExecutionCleanup()
         {
-            // rezip the file, change the extension to .vsdx
-            Console.WriteLine("\nFinished parsing, check the output files for more info:\n1. Rezip the extracted files to inspect Shape ID's for permutation comparison" +
-                "\n2. Exit without deleting extracted files" +
-                "\n3. Delete the extracted/copied files");
-            string? input = Console.ReadLine(); // readline to allow for inspecting the file and delete when done
+            Console.WriteLine("\nFinished parsing, check the output files for more info:\n" +
+                "1. Rezip the extracted files to inspect Shape ID's for permutation comparison\n" +
+                "2. Exit without deleting extracted files\n" +
+                "3. Delete the extracted/copied files");
+
+            string? input = Console.ReadLine();
 
             switch (input)
             {
+                // rezip the extracted files into a Visio, allow the user to delete again
                 case "1":
+
                     string newZipPath = Path + @"\Modified" + FileName + ".zip";
                     ZipFile.CreateFromDirectory(ExtractPath, newZipPath);
 
-                    // change the file extension and move it to the zip file to create a visio file
                     string newVisioPath = System.IO.Path.ChangeExtension(newZipPath, ".vsdx");
                     File.Move(newZipPath, newVisioPath);
-
-                    Console.WriteLine("\nfinished zipping, type 'd' to delete the visio reconstructed from the original data and the extracted files");
-                    input = Console.ReadLine(); // readline to allow for inspecting the file and delete when done
-                    if (input == "d")
+                    
+                    // reloops if the deletion is unsuccessful, otherwise any input is valid
+                    bool valid = false;
+                    do
                     {
-                        try
+                        Console.WriteLine("\nFinished zipping, type 'd' to delete the visio reconstructed from the original data and the extracted files");
+                        string? deleteInput = Console.ReadLine();
+                        if (deleteInput == "d")
                         {
-                            File.Delete(newVisioPath);
-                            Directory.Delete(ExtractPath, true);
-                            Console.WriteLine("\nExtracted visio and files have been deleted");
-                        }
-                        catch (Exception) // this is temporary because I kept forgetting and trying to delete it without closing, do a loop in the future
-                        {
-                            Console.WriteLine("Modified Visio file must be closed before deleting, please close the file before attempting to delete again");
-                            string? retry = Console.ReadLine(); // readline to allow for inspecting the file and delete when done
-                            if (retry == "d")
+                            try
                             {
                                 File.Delete(newVisioPath);
                                 Directory.Delete(ExtractPath, true);
                                 Console.WriteLine("\nExtracted visio and files have been deleted");
+                                valid = true;
                             }
+                            catch (Exception)
+                            {
+                                Console.WriteLine("Modified Visio file must be closed before deleting. Please close the file and try again.");
+                                continue;
+                            };
+                            valid = true;
                         }
-                    }
+                    } while (!valid);
                     break;
-                case "3": // note that the "extracted" folder will need to be moved or deleted by hand so that the program can run again
-                    Directory.Delete(ExtractPath, true);
-                    Console.WriteLine("\nDirectory has been deleted");
+
+                case "2":
+                    Console.WriteLine("\nExiting without deleting extracted files.");
                     break;
-                default: // case 2 is the default case, delete the extra files to allow for running the program again with no issue
+
+                case "3":
                     Directory.Delete(ExtractPath, true);
-                    Console.WriteLine("\nDirectory has been deleted");
+                    Console.WriteLine("\nDirectory has been deleted.");
+                    break;
+
+                default:
+                    Console.WriteLine("\nInvalid input. Please enter a valid option.");
                     break;
             }
         }
