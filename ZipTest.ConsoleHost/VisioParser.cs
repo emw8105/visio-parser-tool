@@ -12,6 +12,7 @@ using System.IO.Compression;
 using System.IO.MemoryMappedFiles;
 using ArchitectConvert.ConsoleHost;
 using System.Drawing;
+using System.Text;
 
 // Written by Evan Wright
 
@@ -56,7 +57,8 @@ namespace VisioParse.ConsoleHost
                 DirectedMultiGraph<VertexShape, EdgeShape>[] pageGraphs = new DirectedMultiGraph<VertexShape, EdgeShape>[pageCount];
 
                 // pages start at page1 and go up to and including the page count
-                for (int i = 1; i <= pageCount; i++)
+                int i = 1;
+                foreach (var page in pages)
                 {
                     Console.WriteLine($"Parsing page {i}");
                     callflow.PageInfoFile.WriteLine($"\n----Page {i}----");
@@ -67,21 +69,34 @@ namespace VisioParse.ConsoleHost
                     }
 
                     var graph = BuildGraph(xmlDoc, callflow, i);
-                    pageGraphs[i-1] = graph;   
+                    pageGraphs[i - 1] = graph;
 
                     // print out the graph data parsed from the page
                     callflow.PageInfoFile.WriteLine($"Page {i} has {graph.Vertices.Count} vertices and {graph.NumberOfEdges} edges");
                     callflow.PageInfoFile.WriteLine($"\nGraph notation of page {i}:");
                     PrintPageInformation(graph, callflow.PageInfoFile);
 
-                    // find the permutations, every path from every starting node to every ending node, each path is a test case
+                    // find the permutations, every path from every starting node to every ending node
                     callflow.PathOutputFile.WriteLine($"\n----Paths of page {i}----");
-                    int numPaths = GetAllPermutations(graph, callflow.PathOutputFile, callflow.NodeOption, callflow.StartNodeContent, callflow.EndNodeContent, i);
-                    callflow.PageInfoFile.WriteLine($"Number of paths to test: {numPaths}\n");
-                    Console.WriteLine($"Number of paths to test: {numPaths}\n");
-                    pathCountTotal += numPaths;
+                    var pathSet = GetAllPermutations(graph, callflow.PathOutputFile, callflow.NodeOption, callflow.StartNodeContent, callflow.EndNodeContent, i);
+                    var pathCount = pathSet.Count;
+
+                    // find the minimum paths for test cases
+                    if(pathSet.Count >0)
+                    {
+                        var minPathSet = GetMinimumPaths(graph, pathSet, callflow.PathOutputFile);
+                        var minPathCount = minPathSet.Count;
+
+                        callflow.PathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
+                        callflow.PageInfoFile.WriteLine($"Number of paths to test: {pathCount}\n");
+                        Console.WriteLine($"Number of paths to test: {pathCount}\n");
+                        pathCountTotal += pathCount;
+                        minPathCountTotal += minPathCount;
+                    }
+                    i++;
                 }
                 Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
+                Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
                 callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
             }
             catch (Exception ex)
@@ -110,7 +125,6 @@ namespace VisioParse.ConsoleHost
             // need to separate the shapes into different categories for graph functionality
             // need to compute edges first because connections are recorded as shapes, don't want to add an edge as a vertex
             var connectionShapes = new HashSet<string>();
-            List<VertexShape> pageShapes = new List<VertexShape>();
             List<EdgeShape> pageEdges = new List<EdgeShape>();
 
             // edges are stored as a pair of connections, must parse both to find the origin node and the destination node
@@ -128,7 +142,7 @@ namespace VisioParse.ConsoleHost
             // this is used to assign the edge placements in the graph themselves using their stored data
             AssignEdges(pageEdges, graph);
 
-            // sometimes tables and other extra visual elements are added as shapes, remove them to reduce clutter and save the graph
+            // sometimes tables and other extra visual elements are added as shapes
             graph.RemoveZeroDegreeNodes();
 
             return graph;
@@ -157,7 +171,7 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        static int GetAllPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file, string nodeOption, string? startNodeContent, string? endNodeContent, int pageNum)
+        static List<List<VertexShape>> GetAllPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file, string nodeOption, string? startNodeContent, string? endNodeContent, int pageNum)
         {
             // first get the start and end nodes based on user specification
             IEnumerable<VertexShape>? startNodes;
@@ -197,10 +211,10 @@ namespace VisioParse.ConsoleHost
                 file.WriteLine("Paths:");
                 PrintPathInformation(allPaths, file, "Id");
 
-                var minimalPathSet = GetMinimumPaths(graph, allPaths, file);
+                //var minimalPathSet = GetMinimumPaths(graph, allPaths, file);
                 
                 file.WriteLine($"\nTotal number of paths on Page {pageNum}: {numPaths}");
-                file.WriteLine($"Minimum number of paths on Page {pageNum} to cover all cases: {minimalPathSet.Count}");
+                //file.WriteLine($"Minimum number of paths on Page {pageNum} to cover all cases: {minimalPathSet.Count}");
 
             }
             else
@@ -208,7 +222,7 @@ namespace VisioParse.ConsoleHost
                 file.WriteLine($"No test cases to be generated for this page");
             }
 
-            return numPaths;
+            return allPaths;
         }
 
         // method for finding all of the paths between every starting vertex to every ending vertex
