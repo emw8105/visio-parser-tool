@@ -102,57 +102,61 @@ namespace VisioParse.ConsoleHost
                 "2. Exit without deleting extracted files\n" +
                 "3. Delete the extracted/copied files");
 
+            bool valid = false;
             string? input = Console.ReadLine();
-
-            switch (input)
+            do
             {
-                // rezip the extracted files into a Visio, allow the user to delete again
-                case "1":
+                switch (input)
+                {
+                    // rezip the extracted files into a Visio, allow the user to delete again
+                    case "1":
 
-                    string newZipPath = Path + @"\Modified" + FileName + ".zip";
-                    ZipFile.CreateFromDirectory(ExtractPath, newZipPath);
+                        string newZipPath = Path + @"\Modified" + FileName + ".zip";
+                        ZipFile.CreateFromDirectory(ExtractPath, newZipPath);
 
-                    string newVisioPath = System.IO.Path.ChangeExtension(newZipPath, ".vsdx");
-                    File.Move(newZipPath, newVisioPath);
-                    
-                    // reloops if the deletion is unsuccessful, otherwise any input is valid
-                    bool valid = false;
-                    do
-                    {
-                        Console.WriteLine("\nFinished zipping, type 'd' to delete the visio reconstructed from the original data and the extracted files");
-                        string? deleteInput = Console.ReadLine();
-                        if (deleteInput == "d")
+                        string newVisioPath = System.IO.Path.ChangeExtension(newZipPath, ".vsdx");
+                        File.Move(newZipPath, newVisioPath);
+
+                        // reloops if the deletion is unsuccessful, otherwise any input is valid
+                        do
                         {
-                            try
+                            Console.WriteLine("\nFinished zipping, type 'd' to delete the visio reconstructed from the original data and the extracted files");
+                            string? deleteInput = Console.ReadLine();
+                            if (deleteInput == "d")
                             {
-                                File.Delete(newVisioPath);
-                                Directory.Delete(ExtractPath, true);
-                                Console.WriteLine("\nExtracted visio and files have been deleted");
+                                try
+                                {
+                                    File.Delete(newVisioPath);
+                                    Directory.Delete(ExtractPath, true);
+                                    Console.WriteLine("\nExtracted visio and files have been deleted");
+                                    valid = true;
+                                }
+                                catch (Exception)
+                                {
+                                    Console.WriteLine("Modified Visio file must be closed before deleting. Please close the file and try again.");
+                                    continue;
+                                };
                                 valid = true;
                             }
-                            catch (Exception)
-                            {
-                                Console.WriteLine("Modified Visio file must be closed before deleting. Please close the file and try again.");
-                                continue;
-                            };
-                            valid = true;
-                        }
-                    } while (!valid);
-                    break;
+                        } while (!valid);
+                        break;
 
-                case "2":
-                    Console.WriteLine("\nExiting without deleting extracted files.");
-                    break;
+                    case "2":
+                        Console.WriteLine("\nExiting without deleting extracted files.");
+                        valid = true;
+                        break;
 
-                case "3":
-                    Directory.Delete(ExtractPath, true);
-                    Console.WriteLine("\nDirectory has been deleted.");
-                    break;
+                    case "3":
+                        Directory.Delete(ExtractPath, true);
+                        Console.WriteLine("\nDirectory has been deleted.");
+                        valid = true;
+                        break;
 
-                default:
-                    Console.WriteLine("\nInvalid input. Please enter a valid option.");
-                    break;
-            }
+                    default:
+                        Console.WriteLine("\nInvalid input. Please enter a valid option.");
+                        break;
+                }
+            } while (!valid);
         }
     }
 }

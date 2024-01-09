@@ -15,6 +15,7 @@ using System.Drawing;
 using System.Text;
 
 // Written by Evan Wright
+// Quick TDL: fix algorithm for min paths
 
 namespace VisioParse.ConsoleHost
 {
@@ -54,7 +55,7 @@ namespace VisioParse.ConsoleHost
 
                 XDocument xmlDoc; // used for current xml being parsed
 
-                DirectedMultiGraph<VertexShape, EdgeShape>[] pageGraphs = new DirectedMultiGraph<VertexShape, EdgeShape>[pageCount];
+                DirectedMultiGraph<VertexShape, EdgeShape>[] pageGraphs = new DirectedMultiGraph<VertexShape, EdgeShape>[pageCount]; // used for multi-flow parsing (off-page references)
 
                 // pages start at page1 and go up to and including the page count
                 int i = 1;
@@ -267,36 +268,84 @@ namespace VisioParse.ConsoleHost
             }
         }
 
+        // this algorithm is much faster but is lazy, will result in approximately 2x as many minimum tests which defeats the purpose
+        //static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
+        //{
+        //    // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
+        //    var uniqueEdges = graph.Edges.Distinct().ToList();
+        //    HashSet<EdgeShape> coveredEdges = new HashSet<EdgeShape>();
+
+        //    // list of minimal paths covering all unique edges
+        //    var minimalPathSet = new List<List<VertexShape>>();
+
+        //    // loop through paths and add to minimalPathSet if it covers a unique edge
+        //    foreach (var path in allPaths)
+        //    {
+        //        var pathCoversUniqueEdge = false;
+
+        //        for (int i = 0; i < path.Count - 1; i++)
+        //        {
+        //            VertexShape source = path[i];
+        //            VertexShape target = path[i + 1];
+
+        //            // find the edge from source to target
+        //            if (graph.GetEdges(source, target).Any(edge => uniqueEdges.Contains(edge) && !coveredEdges.Contains(edge)))
+        //            {
+        //                pathCoversUniqueEdge = true;
+        //                coveredEdges.UnionWith(graph.GetEdges(source, target));
+        //            }
+        //        }
+
+        //        if (pathCoversUniqueEdge)
+        //        {
+        //            minimalPathSet.Add(path);
+        //        }
+        //    }
+
+        //    // print the minimal paths
+        //    file.WriteLine("\nMinimal paths covering all unique edges:");
+        //    PrintPathInformation(minimalPathSet, file, "Id");
+        //    file.WriteLine("\nText for minimum paths:");
+        //    PrintPathInformation(minimalPathSet, file, "Text");
+
+        //    return minimalPathSet;
+        //}
+
         static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
         {
             // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
             var uniqueEdges = graph.Edges.Distinct().ToList();
+            // set to keep track of covered edges
             HashSet<EdgeShape> coveredEdges = new HashSet<EdgeShape>();
 
             // list of minimal paths covering all unique edges
             var minimalPathSet = new List<List<VertexShape>>();
 
-            // loop through paths and add to minimalPathSet if it covers a unique edge
-            foreach (var path in allPaths)
+            // While there are still uncovered edges
+            while (coveredEdges.Count < uniqueEdges.Count)
             {
-                var pathCoversUniqueEdge = false;
-
-                for (int i = 0; i < path.Count - 1; i++)
+                // Sort paths by the number of new uncovered edges
+                allPaths.Sort((path1, path2) =>
                 {
-                    VertexShape source = path[i];
-                    VertexShape target = path[i + 1];
+                    int uncoveredEdgesCount1 = CountUncoveredEdges(graph, path1, uniqueEdges, coveredEdges);
+                    int uncoveredEdgesCount2 = CountUncoveredEdges(graph, path2, uniqueEdges, coveredEdges);
+                    return uncoveredEdgesCount2.CompareTo(uncoveredEdgesCount1);
+                });
 
-                    // find the edge from source to target
-                    if (graph.GetEdges(source, target).Any(edge => uniqueEdges.Contains(edge) && !coveredEdges.Contains(edge)))
-                    {
-                        pathCoversUniqueEdge = true;
-                        coveredEdges.UnionWith(graph.GetEdges(source, target));
-                    }
-                }
+                // Select the path with the maximum number of new uncovered edges
+                var path = allPaths.FirstOrDefault(p => CountUncoveredEdges(graph, p, uniqueEdges, coveredEdges) > 0);
 
-                if (pathCoversUniqueEdge)
+                if (path != null)
                 {
+                    // Add the selected path to the set of selected paths
                     minimalPathSet.Add(path);
+                    // Update the set of covered edges
+                    coveredEdges.UnionWith(GetEdgesFromPath(graph, path));
+                }
+                else
+                {
+                    // If there is no path that covers new edges, break the loop
+                    break;
                 }
             }
 
@@ -307,6 +356,27 @@ namespace VisioParse.ConsoleHost
             PrintPathInformation(minimalPathSet, file, "Text");
 
             return minimalPathSet;
+        }
+
+        static int CountUncoveredEdges(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<VertexShape> path, List<EdgeShape> uniqueEdges, HashSet<EdgeShape> coveredEdges)
+        {
+            return GetEdgesFromPath(graph, path).Count(edge => uniqueEdges.Contains(edge) && !coveredEdges.Contains(edge));
+        }
+
+        static List<EdgeShape> GetEdgesFromPath(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<VertexShape> path)
+        {
+            var edges = new List<EdgeShape>();
+
+            for (int i = 0; i < path.Count - 1; i++)
+            {
+                VertexShape source = path[i];
+                VertexShape target = path[i + 1];
+
+                // find the edge from source to target
+                edges.AddRange(graph.GetEdges(source, target).Where(edge => !edges.Contains(edge)));
+            }
+
+            return edges;
         }
 
         static void MatchConnections(IEnumerable<XElement>? connections, HashSet<string> connectionShapes, List<EdgeShape> pageEdges)
@@ -426,10 +496,10 @@ namespace VisioParse.ConsoleHost
                             file.WriteLine($"ShapeID: {id} is a subshape, MasterShape = {masterId}");
                             Console.WriteLine($"Subshape detected, it will not be included in the path determination - ShapeID: {id}");
                         }
-                    }
 
-                    // after shape information is saved into corresponding object, write the ID to the text of the shape to visualize permutations
-                    WriteShapeID(shape);
+                        // after shape information is saved into corresponding object, write the ID to the text of the shape to visualize permutations
+                        WriteShapeID(shape);
+                    }   
                 }
                 catch (NullReferenceException ex)
                 {
