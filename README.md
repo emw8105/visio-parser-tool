@@ -1,7 +1,5 @@
 # Visio Parsing Tool
 
-REMINDER: DELETE THE EXAMPLE DOCUMENTS WHEN DEVELOPMENT IS FINISHED
-
 ## Introduction
 This is the POC mock for a tool designed to generate and execute test cases for QA purposes. This version simply has some neat graph algorithms that show off how different elements of a Visio file can be parsed to collect interesting data.
 
@@ -14,6 +12,7 @@ The current version of the Visio Parser can:
 - Generate the permutations (paths from start to end) and display them for the user
 - Allow the user various ways to specify how start and end nodes should be selected (Text, shape, indiscriminately, etc.)
 - Provide the option to rezip the exracted contents with IDs overwritten on text for ID mapping on the permutations
+- Determines the optimal minimum paths needed to cover all edges / cases to simplify QA testing
 
 ## TDL
 - track number of paths per page to calculate number of test cases to write - done
