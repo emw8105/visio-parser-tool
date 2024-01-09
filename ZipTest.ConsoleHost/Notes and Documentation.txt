@@ -8,6 +8,8 @@
 // clean up what goes into the output file to be useful for searching data - outputs split to categorize them, done
 // option menu implemented to enable user to specify runtime parameters and add configurations - done
 // check start nodes for text or a specific master shape (can use option menu) - done
+// minimum paths calculated to find the smallest number of paths needed to test every edge - done x2
+    // work on cutting edges from unparsable nodes possibly? or just speedup in general
 
 // try to implement checkpoints (not sure if it's useful, would probably need to just ask the user to parse the tree of references starting from one given page)
     // would make the graph an array of graphs with indexes as page numbers, when a shape has a certain master,

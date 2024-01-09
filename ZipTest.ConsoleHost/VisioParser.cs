@@ -15,7 +15,6 @@ using System.Drawing;
 using System.Text;
 
 // Written by Evan Wright
-// Quick TDL: fix algorithm for min paths
 
 namespace VisioParse.ConsoleHost
 {
@@ -311,6 +310,7 @@ namespace VisioParse.ConsoleHost
         //    return minimalPathSet;
         //}
 
+        // this algorithm takes up 95% of runtime
         static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
         {
             // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
@@ -321,10 +321,10 @@ namespace VisioParse.ConsoleHost
             // list of minimal paths covering all unique edges
             var minimalPathSet = new List<List<VertexShape>>();
 
-            // While there are still uncovered edges
+            // while there are still uncovered edges
             while (coveredEdges.Count < uniqueEdges.Count)
             {
-                // Sort paths by the number of new uncovered edges
+                // sort paths by the number of new uncovered edges
                 allPaths.Sort((path1, path2) =>
                 {
                     int uncoveredEdgesCount1 = CountUncoveredEdges(graph, path1, uniqueEdges, coveredEdges);
@@ -332,19 +332,19 @@ namespace VisioParse.ConsoleHost
                     return uncoveredEdgesCount2.CompareTo(uncoveredEdgesCount1);
                 });
 
-                // Select the path with the maximum number of new uncovered edges
+                // select the path with the maximum number of new uncovered edges
                 var path = allPaths.FirstOrDefault(p => CountUncoveredEdges(graph, p, uniqueEdges, coveredEdges) > 0);
 
                 if (path != null)
                 {
-                    // Add the selected path to the set of selected paths
+                    // add the selected path to the set of selected paths
                     minimalPathSet.Add(path);
-                    // Update the set of covered edges
+                    // update the set of covered edges
                     coveredEdges.UnionWith(GetEdgesFromPath(graph, path));
                 }
                 else
                 {
-                    // If there is no path that covers new edges, break the loop
+                    // if there is no path that covers new edges, break the loop
                     break;
                 }
             }

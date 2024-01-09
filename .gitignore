@@ -361,3 +361,18 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+
+
+# Ignore Visio files
+*.vsd
+*.vsdx
+*.vss
+*.vssx
+*.vst
+*.vstx
+*.vsw
+
+# Ignore parsed files
+paths_*.txt
+pageInfo_*.txt
