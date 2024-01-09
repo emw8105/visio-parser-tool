@@ -3,7 +3,7 @@
 ## Introduction
 This is the POC mock for a tool designed to generate and execute test cases for QA purposes. This version simply has some neat graph algorithms that show off how different elements of a Visio file can be parsed to collect interesting data.
 
-The goal of this version of the tool is to aid in the design and usage of Visio files by providing a large amount of data collection. 
+The goal of this version of the tool is to aid in the design and usage of Visio files for streamlining QA operations, namely test case handling, by providing a large amount of data collection. 
 
 ## Usages
 The current version of the Visio Parser can:
