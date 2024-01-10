@@ -17,7 +17,7 @@ namespace VisioParse.ConsoleHost
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "Improved Inbound Routing Design v1.18.vsdx";
+        public string FileName = "USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor
@@ -26,6 +26,7 @@ namespace VisioParse.ConsoleHost
         public string YamlFilePath = string.Empty;
         public StreamWriter PageInfoFile;
         public StreamWriter PathOutputFile;
+        public StreamWriter MinPathOutputFile;
 
         // generated at runtime from user input to serve as configuration options
         public string? NodeOption = string.Empty;
@@ -47,6 +48,10 @@ namespace VisioParse.ConsoleHost
             string pathsFilePath = System.IO.Path.Combine(Path, "paths_" + FileName + ".txt");
             File.WriteAllText(pathsFilePath, "Beginning output\n");
             PathOutputFile = File.AppendText(pathsFilePath);
+
+            pathsFilePath = System.IO.Path.Combine(Path, "minPaths_" + FileName + ".txt");
+            File.WriteAllText(pathsFilePath, "Beginning output\n");
+            MinPathOutputFile = File.AppendText(pathsFilePath);
         }
         public void ConfigurationSetup()
         {

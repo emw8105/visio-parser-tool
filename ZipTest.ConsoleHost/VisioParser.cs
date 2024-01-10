@@ -60,8 +60,9 @@ namespace VisioParse.ConsoleHost
                 int i = 1;
                 foreach (var page in xPages)
                 {
-                    Console.WriteLine($"Parsing page {i}");
-                    callflow.PageInfoFile.WriteLine($"\n----Page {i}----");
+                    var pageName = page.Attribute("Name").Value;
+                    Console.WriteLine($"Parsing page {i}: {pageName}");
+                    callflow.PageInfoFile.WriteLine($"\n----Page {i}: {pageName}----");
 
                     using (XmlTextReader reader = new XmlTextReader(callflow.ExtractPath + @"\visio\pages\page" + i + ".xml"))
                     {
@@ -78,16 +79,17 @@ namespace VisioParse.ConsoleHost
 
                     // find the permutations, every path from every starting node to every ending node
                     callflow.PathOutputFile.WriteLine($"\n----Paths of page {i}----");
+                    callflow.MinPathOutputFile.WriteLine($"\n----Minimum Paths of page {i}----");
                     var pathSet = GetAllPermutations(graph, callflow.PathOutputFile, callflow.NodeOption, callflow.StartNodeContent, callflow.EndNodeContent, i);
                     var pathCount = pathSet.Count;
 
                     // find the minimum paths for test cases
                     if(pathSet.Count > 0)
                     {
-                        var minPathSet = GetMinimumPaths(graph, pathSet, callflow.PathOutputFile);
+                        var minPathSet = GetMinimumPaths(graph, pathSet, callflow.MinPathOutputFile);
                         var minPathCount = minPathSet.Count;
 
-                        callflow.PathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
+                        callflow.MinPathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
                         callflow.PageInfoFile.WriteLine($"Number of paths to test: {pathCount}\n");
                         Console.WriteLine($"Number of paths to test: {pathCount}\n");
                         pathCountTotal += pathCount;
