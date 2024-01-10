@@ -44,8 +44,8 @@ namespace VisioParse.ConsoleHost
                     pagesXml = XDocument.Load(documentReader);
                 }
 
-                var pages = pagesXml.Descendants(ns + "Page");
-                int pageCount = pages.Count();
+                var xPages = pagesXml.Descendants(ns + "Page");
+                int pageCount = xPages.Count();
                 int pathCountTotal = 0;
                 int minPathCountTotal = 0;
 
@@ -54,11 +54,11 @@ namespace VisioParse.ConsoleHost
 
                 XDocument xmlDoc; // used for current xml being parsed
 
-                DirectedMultiGraph<VertexShape, EdgeShape>[] pageGraphs = new DirectedMultiGraph<VertexShape, EdgeShape>[pageCount]; // used for multi-flow parsing (off-page references)
+                Page[] pageList = new Page[pageCount]; // used for multi-flow parsing (off-page references)
 
                 // pages start at page1 and go up to and including the page count
                 int i = 1;
-                foreach (var page in pages)
+                foreach (var page in xPages)
                 {
                     Console.WriteLine($"Parsing page {i}");
                     callflow.PageInfoFile.WriteLine($"\n----Page {i}----");
@@ -69,7 +69,7 @@ namespace VisioParse.ConsoleHost
                     }
 
                     var graph = BuildGraph(xmlDoc, callflow, i);
-                    pageGraphs[i - 1] = graph;
+                    pageList[i - 1] = BuildPage(graph, page, i);
 
                     // print out the graph data parsed from the page
                     callflow.PageInfoFile.WriteLine($"Page {i} has {graph.Vertices.Count} vertices and {graph.NumberOfEdges} edges");
@@ -98,6 +98,7 @@ namespace VisioParse.ConsoleHost
                 Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
                 Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
                 callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
+                callflow.PathOutputFile.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
 
                 callflow.PageInfoFile.Flush();
                 callflow.PageInfoFile.Close();
@@ -151,6 +152,15 @@ namespace VisioParse.ConsoleHost
 
             return graph;
         }
+
+        static Page BuildPage(DirectedMultiGraph<VertexShape, EdgeShape> graph, XElement page, int pageNum) =>
+            new Page()
+            {
+                Graph = graph,
+                Id = page.Attribute("ID").Value,
+                Number = pageNum,
+                Name = page.Attribute("Name").Value,
+            };
 
         static void GetSpecifiedNodes(DirectedMultiGraph<VertexShape, EdgeShape> graph, string nodeOption, string? startNodeContent, string? endNodeContent, out IEnumerable<VertexShape> startNodes, out IEnumerable<VertexShape> endNodes)
         {

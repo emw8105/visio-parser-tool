@@ -27,7 +27,7 @@ namespace VisioParse.ConsoleHost
         public StreamWriter PageInfoFile;
         public StreamWriter PathOutputFile;
 
-        // generated at runtime from user input
+        // generated at runtime from user input to serve as configuration options
         public string? NodeOption = string.Empty;
         public string? StartNodeContent = string.Empty;
         public string? EndNodeContent = string.Empty;

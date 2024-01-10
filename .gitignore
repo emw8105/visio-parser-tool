@@ -376,3 +376,6 @@ FodyWeavers.xsd
 # Ignore parsed files
 paths_*.txt
 pageInfo_*.txt
+
+# Ignore extracted files
+extracted/
