@@ -435,12 +435,7 @@ namespace VisioParse.ConsoleHost
                     };
                     pageEdges.Add(edge);
 
-                    // check if the edge is already processed
-                    if (!connectionShapes.Contains(fromSheetBegin))
-                    {
-                        connectionShapes.Add(fromSheetBegin); // add the shape ID to a list of shapes designated as connections
-                    }
-
+                    connectionShapes.Add(fromSheetBegin); // add the shape ID to a list of shapes designated as connections
                     endXConnections.Remove(fromSheetBegin); // remove the corresponding connection's shape ID
                 }
                 else
@@ -465,7 +460,7 @@ namespace VisioParse.ConsoleHost
             string? type;
             string? masterId;
 
-            Console.WriteLine(String.Join(",", connectionShapes));
+            // Console.WriteLine(String.Join(",", connectionShapes)); // checks if connections were assigned properly
             foreach (var shape in shapes)
             {
                 try
