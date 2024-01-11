@@ -13,6 +13,7 @@ using System.IO.MemoryMappedFiles;
 using ArchitectConvert.ConsoleHost;
 using System.Drawing;
 using System.Text;
+using System.Collections.Generic;
 
 // Written by Evan Wright
 
@@ -136,7 +137,7 @@ namespace VisioParse.ConsoleHost
 
             // edges are stored as a pair of connections, must parse both to find the origin node and the destination node
             // once a pair of connections is found, we store it as an edge
-            MatchConnections(connections, connectionShapes, pageEdges);
+            MatchConnections(connections, connectionShapes, pageEdges, shapes);
 
             // Extract and print shape information from the current page, convert each non-edge shape into a vertex
             ExtractShapeToVertex(graph, shapes, connectionShapes, callflow.PageInfoFile);
@@ -391,7 +392,7 @@ namespace VisioParse.ConsoleHost
             return edges;
         }
 
-        static void MatchConnections(IEnumerable<XElement>? connections, HashSet<string> connectionShapes, List<EdgeShape> pageEdges)
+        static void MatchConnections(IEnumerable<XElement>? connections, HashSet<string> connectionShapes, List<EdgeShape> pageEdges, IEnumerable<XElement> shapes)
         {
             // create two dictionaries, load all connections into each, then match them together based on shapeID or their "FromSheet" value to create an edge
             var beginXConnections = new Dictionary<string, XElement>();
@@ -423,18 +424,19 @@ namespace VisioParse.ConsoleHost
                 {
                     string toSheetEnd = endXConnection.Attribute("ToSheet").Value; // destination node of the edge
 
+                    var edgeShape = shapes.First(shape => shape?.Attribute("ID")?.Value == fromSheetBegin); // get the text of the edge from it's respective shape
+
                     EdgeShape edge = new EdgeShape()
                     {
                         Id = fromSheetBegin,
                         ToShape = toSheetEnd,
                         FromShape = toSheetBegin,
+                        Text = edgeShape?.Element(ns + "Text")?.Value
                     };
                     pageEdges.Add(edge);
 
-                    string edgeId = $"EdgeID:{fromSheetBegin}_from:{toSheetBegin}_to:{toSheetEnd}";
-
                     // check if the edge is already processed
-                    if (!connectionShapes.Contains(edgeId))
+                    if (!connectionShapes.Contains(fromSheetBegin))
                     {
                         connectionShapes.Add(fromSheetBegin); // add the shape ID to a list of shapes designated as connections
                     }
@@ -463,6 +465,7 @@ namespace VisioParse.ConsoleHost
             string? type;
             string? masterId;
 
+            Console.WriteLine(String.Join(",", connectionShapes));
             foreach (var shape in shapes)
             {
                 try
