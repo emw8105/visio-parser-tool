@@ -46,9 +46,9 @@ namespace VisioParse.ConsoleHost
                 }
 
                 var xPages = pagesXml.Descendants(ns + "Page");
-                int pageCount = xPages.Count();
-                int pathCountTotal = 0;
-                int minPathCountTotal = 0;
+                var pageCount = xPages.Count();
+                var pathCountTotal = 0;
+                var minPathCountTotal = 0;
 
                 Console.WriteLine($"Total number of pages: {pageCount}");
                 callflow.PageInfoFile.WriteLine($"Total number of pages: {pageCount}");
@@ -56,6 +56,7 @@ namespace VisioParse.ConsoleHost
                 XDocument xmlDoc; // used for current xml being parsed
 
                 Page[] pageList = new Page[pageCount]; // used for multi-flow parsing (off-page references)
+                var multiPageGraph = new DirectedMultiGraph<VertexShape, EdgeShape>();
 
                 // pages start at page1 and go up to and including the page count
                 int i = 1;
@@ -71,6 +72,8 @@ namespace VisioParse.ConsoleHost
                     }
 
                     var graph = BuildGraph(xmlDoc, callflow, i);
+                    MergePageGraph(graph, multiPageGraph); // combine all pages into one graph to parse between off-page references
+
                     pageList[i - 1] = BuildPage(graph, page, i);
 
                     // print out the graph data parsed from the page
@@ -154,6 +157,18 @@ namespace VisioParse.ConsoleHost
             graph.RemoveZeroDegreeNodes();
 
             return graph;
+        }
+
+        static void MergePageGraph(DirectedMultiGraph<VertexShape, EdgeShape> graph, DirectedMultiGraph<VertexShape, EdgeShape> multiPageGraph)
+        {
+            foreach (var vertex in graph.Vertices)
+            {
+                multiPageGraph.AddVertex(vertex);
+            }
+            foreach (var edge in graph.Edges)
+            {
+                multiPageGraph.Add(graph.Vertices.First(v => v.Id == edge.FromShape), graph.Vertices.First(v => v.Id == edge.ToShape), edge);
+            }
         }
 
         static Page BuildPage(DirectedMultiGraph<VertexShape, EdgeShape> graph, XElement page, int pageNum) =>
@@ -426,7 +441,7 @@ namespace VisioParse.ConsoleHost
 
                     var edgeShape = shapes.First(shape => shape?.Attribute("ID")?.Value == fromSheetBegin); // get the text of the edge from it's respective shape
 
-                    EdgeShape edge = new EdgeShape()
+                    EdgeShape edge = new()
                     {
                         Id = fromSheetBegin,
                         ToShape = toSheetEnd,

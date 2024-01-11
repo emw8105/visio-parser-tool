@@ -29,9 +29,13 @@ namespace VisioParse.ConsoleHost
         public StreamWriter MinPathOutputFile;
 
         // generated at runtime from user input to serve as configuration options
-        public string? NodeOption = string.Empty;
-        public string? StartNodeContent = string.Empty;
-        public string? EndNodeContent = string.Empty;
+        public string? NodeOption = string.Empty; // 2 digits representing config options, first is for start/end nodes, second is for multi-flow parsing
+        // basic config for start/end nodes
+        public string? StartNodeContent = string.Empty; // either text or Master ID representing the value to use when considering start nodes
+        public string? EndNodeContent = string.Empty; // either text or Master ID representing the value to use when considering start nodes
+        // advanced config for multi-flow parsing, checkpoints refer to shapes which are not hyperlinked and appear at various points in other flows
+        public string? OffPageContent = string.Empty; // the Master ID of off-page reference shapes
+        public string? CheckpointContent = string.Empty;
 
 
         public CallflowHandler()
@@ -71,7 +75,7 @@ namespace VisioParse.ConsoleHost
                     break;
                 case "2":
                     Console.WriteLine("Choose your ideal method of determining start nodes based on your Visio structure:" +
-                        "\n1. Parse based on a master shape ID (a specific shape used)" +
+                        "\n1. Parse based on a Master ID (a specific shape used)" +
                         "\n2. Parse based on text (ex: Start)");
                     string? startNodeChoice = Console.ReadLine();
                     switch (startNodeChoice)
@@ -97,6 +101,41 @@ namespace VisioParse.ConsoleHost
                     }
                     break;
                 default: // indiscriminate parsing is the default
+                    break;
+            }
+
+            Console.WriteLine("Please select from the additional configuration options:" +
+                "\n1. Multi-flow parsing using off-page references" +
+                "\n2. Multi-flow parsing using checkpoints" +
+                "\n3. Multi-flow parsing using both off-page references and checkpoints" +
+                "\n4. No multi-flow parsing");
+            Console.WriteLine("Note: The off-page references must all be hyperlinked properly and checkpoints must follow the following format:" +
+                "pageName: checkPointIdentifier (ex: Legend: A)");
+            menuChoice = Console.ReadLine();
+            switch (menuChoice)
+            {
+                case "1":
+                    NodeOption += "1";
+                    Console.WriteLine("Please enter the Master ID for the off-page reference shapes");
+                    OffPageContent = Console.ReadLine();
+                    break;
+
+                case "2":
+                    NodeOption += "2";
+                    Console.WriteLine("Please enter the Master ID for checkpoint shapes");
+                    CheckpointContent = Console.ReadLine();
+                    break;
+
+                case "3":
+                    NodeOption += "3";
+                    Console.WriteLine("Please enter the Master ID for checkpoint shapes");
+                    OffPageContent = Console.ReadLine();
+                    Console.WriteLine("Please enter the Checkpoint ID");
+                    CheckpointContent = Console.ReadLine();
+                    break;
+
+                default: // Case 4 is the default (No multi-flow parsing)
+                    Console.WriteLine("No multi-flow parsing enabled, off-page references and checkpoints will be treated as regular vertices and paths won't continue between pages");
                     break;
             }
         }

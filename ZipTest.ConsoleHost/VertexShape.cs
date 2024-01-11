@@ -42,5 +42,15 @@ namespace VisioParse.ConsoleHost
         /// The identifier representing the master of the shape
         /// </summary>
         public required string MasterId { get; init; }
+
+        /// <summary>
+        /// The page name serving as a reference if the vertex is an off-page reference
+        /// </summary>
+        public string pageReference = string.Empty;
+
+        /// <summary>
+        /// The specific vertex Id serving as a reference if the vertex is an off-page reference to a specific node
+        /// </summary>
+        public string vertexReference = string.Empty;
     }
 }

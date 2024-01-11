@@ -30,5 +30,7 @@ namespace VisioParse.ConsoleHost
         /// The name designated by the user for the page
         /// </summary>
         public required string Name { get; set; }
+
+        public VertexShape? ReferenceShapes { get; set; }
     }
 }

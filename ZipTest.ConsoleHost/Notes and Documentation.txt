@@ -26,6 +26,39 @@
 
 // issue: nodes that can act as pesudo starting point such as a db table, can multiply the amount of paths - kind of patched by allowing specified start points
 
+// plan for checkpoints/off-page references:
+might have to parse the visio file in it's entirely before assigning things to the graph and then make one giant graph
+-shapes have an element called "Section" which has "Hyperlink", in that there is a "Subaddress" which seems to be named the page
+
+// might need to make start/end the same shape, offpage start/end the same shape, also offpage for pages and offpage for checkpoint shapes
+
+parse thru pages and generate the large graph
+pages should store nodes with the master id for off-page references, checkpoints, start nodes, and end nodes all separately
+
+
+keep graphs as independent
+pages should store list of off page references when parsing based on master id
+
+
+
+basically:
+when parsing for vertexes, node option doesnt matter just check for hyperlink and add the subaddress if it's there
+	checkpoints can be checked retroactively from the text so not necessary
+
+then after making start and end nodes, consider the node option (if nodeOption.substring(1) == 1 or 3 do x, and if it == 2 or 3 do y)
+check the start and end nodes and make a list of start nodes and a list of end nodes with references (i.e. values with pageReference populated)
+check the text of each start and end node and make a list of startnodes and a list of end nodes for those where the text follows the correct format (i.e. values with vertexReference as the correct formats)
+then will probably need to make a new function that determines which references and checkpoints to link together, will prob use the following logic:
+	- check the pageReference value of an end node references list, see if there are any page names which match in the start node references list
+	- upon a match, add an edge to the multiflow graph between those vertices
+	- continue until all nodes have been matched (pretty much the connections logic)
+	- will probably need to add the page name as a value in the vertices, not sure if it would be simple to figure out which graph the vertex belongs to
+	- repeat logic for the checkpoints lists
+	
+after that, do the permutations as normal on the multigraph, find some kind of way to differentiate the results by page
+
+
+
 
 // Notes and Documentation:
 // This POC exists to show the process of taking an input .vsdx visio file, unzipping it into it's xml components,
