@@ -21,12 +21,12 @@ namespace VisioParse.ConsoleHost
         /// <summary>
         /// The text attached to the shape if any
         /// </summary>
-        public string ?Text { get; set; }
+        public string? Text { get; set; } = string.Empty;
 
         /// <summary>
         /// The type of a shape if any, most will just be 'Shape'
         /// </summary>
-        public string ?Type { get; init; }
+        public string? Type { get; init; } = string.Empty;
 
         /// <summary>
         /// The XML content of the shape
@@ -39,6 +39,11 @@ namespace VisioParse.ConsoleHost
         public required XElement XMaster { get; init; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public required string PageName = string.Empty;
+
+        /// <summary>
         /// The identifier representing the master of the shape
         /// </summary>
         public required string MasterId { get; init; }
@@ -46,11 +51,11 @@ namespace VisioParse.ConsoleHost
         /// <summary>
         /// The page name serving as a reference if the vertex is an off-page reference
         /// </summary>
-        public string pageReference = string.Empty;
+        public string? pageReference = string.Empty;
 
         /// <summary>
         /// The specific vertex Id serving as a reference if the vertex is an off-page reference to a specific node
         /// </summary>
-        public string vertexReference = string.Empty;
+        public string? vertexReference = string.Empty;
     }
 }

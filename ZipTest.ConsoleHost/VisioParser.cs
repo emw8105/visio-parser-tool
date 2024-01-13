@@ -29,16 +29,16 @@ namespace VisioParse.ConsoleHost
             CallflowHandler callflow = new CallflowHandler();
 
             // Configuration options
-            callflow.ConfigurationSetup();
+            callflow.Config.ConfigurationSetup();
 
             // extract and read xml file contents
-            try
-            {
+            //try
+            //{
                 Console.WriteLine("extracting file to " + callflow.ExtractPath);
                 ZipFile.ExtractToDirectory(callflow.ZipPath, callflow.ExtractPath); // convert given visio file to xml components
                 Console.WriteLine("finished extraction, parsing components...");
 
-                // first parse "pages.xml" to find page count
+                // first parse "pages.xml" to find page count and page names
                 XDocument pagesXml;
                 using (XmlTextReader documentReader = new XmlTextReader(callflow.ExtractPath + @"\visio\pages\pages.xml"))
                 {
@@ -55,14 +55,14 @@ namespace VisioParse.ConsoleHost
 
                 XDocument xmlDoc; // used for current xml being parsed
 
-                Page[] pageList = new Page[pageCount]; // used for multi-flow parsing (off-page references)
-                var multiPageGraph = new DirectedMultiGraph<VertexShape, EdgeShape>();
+                Page[] pageList = new Page[pageCount];
+                var multiPageGraph = new DirectedMultiGraph<VertexShape, EdgeShape>(); // used for multi-flow parsing (off-page references)
 
                 // pages start at page1 and go up to and including the page count
                 int i = 1;
                 foreach (var page in xPages)
                 {
-                    var pageName = page.Attribute("Name").Value;
+                    var pageName = page?.Attribute("Name")?.Value;
                     Console.WriteLine($"Parsing page {i}: {pageName}");
                     callflow.PageInfoFile.WriteLine($"\n----Page {i}: {pageName}----");
 
@@ -71,7 +71,7 @@ namespace VisioParse.ConsoleHost
                         xmlDoc = XDocument.Load(reader);
                     }
 
-                    var graph = BuildGraph(xmlDoc, callflow, i);
+                    var graph = BuildGraph(xmlDoc, callflow, i, pageName);
                     MergePageGraph(graph, multiPageGraph); // combine all pages into one graph to parse between off-page references
 
                     pageList[i - 1] = BuildPage(graph, page, i);
@@ -84,24 +84,28 @@ namespace VisioParse.ConsoleHost
                     // find the permutations, every path from every starting node to every ending node
                     callflow.PathOutputFile.WriteLine($"\n----Paths of page {i}----");
                     callflow.MinPathOutputFile.WriteLine($"\n----Minimum Paths of page {i}----");
-                    var pathSet = GetAllPermutations(graph, callflow.PathOutputFile, callflow.NodeOption, callflow.StartNodeContent, callflow.EndNodeContent, i);
-                    var pathCount = pathSet.Count;
-
-                    // find the minimum paths for test cases
-                    if(pathSet.Count > 0)
-                    {
-                        var minPathSet = GetMinimumPaths(graph, pathSet, callflow.MinPathOutputFile);
-                        var minPathCount = minPathSet.Count;
-
-                        callflow.MinPathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
-                        callflow.PageInfoFile.WriteLine($"Number of paths to test: {pathCount}\n");
-                        Console.WriteLine($"Number of paths to test: {pathCount}\n");
-                        pathCountTotal += pathCount;
-                        minPathCountTotal += minPathCount;
-                    }
+                    
                     i++;
                 }
-                Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
+
+            var pathSet = GetAllPermutations(multiPageGraph, callflow.PathOutputFile, callflow.Config, pageList, i);
+            var pathCount = pathSet.Count;
+
+            // find the minimum paths for test cases
+            if (pathSet.Count > 0)
+            {
+                var minPathSet = GetMinimumPaths(multiPageGraph, pathSet, callflow.MinPathOutputFile);
+                var minPathCount = minPathSet.Count;
+
+                callflow.MinPathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
+                callflow.PageInfoFile.WriteLine($"Number of paths to test: {pathCount}\n");
+                Console.WriteLine($"Number of paths to test: {pathCount}\n");
+                pathCountTotal += pathCount;
+                minPathCountTotal += minPathCount;
+            }
+
+
+            Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
                 Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
                 callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
                 callflow.PathOutputFile.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
@@ -112,19 +116,19 @@ namespace VisioParse.ConsoleHost
                 callflow.PathOutputFile.Close();
 
                 callflow.ExecutionCleanup();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"An error occurred: {ex.Message}");
 
-                callflow.PageInfoFile.Flush();
-                callflow.PageInfoFile.Close();
-                callflow.PathOutputFile.Flush();
-                callflow.PathOutputFile.Close();
-            }
+            //    callflow.PageInfoFile.Flush();
+            //    callflow.PageInfoFile.Close();
+            //    callflow.PathOutputFile.Flush();
+            //    callflow.PathOutputFile.Close();
+            //}
         }
 
-        static DirectedMultiGraph<VertexShape, EdgeShape> BuildGraph(XDocument xmlDoc, CallflowHandler callflow, int pageNum)
+        static DirectedMultiGraph<VertexShape, EdgeShape> BuildGraph(XDocument xmlDoc, CallflowHandler callflow, int pageNum, string pageName)
         {
             // shapes include both vertices and edges, some pages have separate shapes within shapes that are missing various properties, must handle if using this
             // var shapes = xmlDoc.Root.Element(ns + "Shapes").Elements(ns + "Shape"); // use this parsing instead to only get top-level shapes
@@ -143,7 +147,7 @@ namespace VisioParse.ConsoleHost
             MatchConnections(connections, connectionShapes, pageEdges, shapes);
 
             // Extract and print shape information from the current page, convert each non-edge shape into a vertex
-            ExtractShapeToVertex(graph, shapes, connectionShapes, callflow.PageInfoFile);
+            ExtractShapeToVertex(graph, shapes, connectionShapes, callflow.PageInfoFile, pageName);
 
             // when shapes are converted to vertices, the text is edited so save the edited page
             xmlDoc.Save(callflow.ExtractPath + @"\visio\pages\page" + pageNum + ".xml");
@@ -182,7 +186,7 @@ namespace VisioParse.ConsoleHost
 
         static void GetSpecifiedNodes(DirectedMultiGraph<VertexShape, EdgeShape> graph, string nodeOption, string? startNodeContent, string? endNodeContent, out IEnumerable<VertexShape> startNodes, out IEnumerable<VertexShape> endNodes)
         {
-            switch (nodeOption)
+            switch (nodeOption.Substring(0,1))
             {
                 case "1":
                     Console.WriteLine($"Parsing generated graph to find start nodes with MasterID: {startNodeContent}, and end nodes with MasterID: {endNodeContent}");
@@ -203,13 +207,74 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        static List<List<VertexShape>> GetAllPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file, string nodeOption, string? startNodeContent, string? endNodeContent, int pageNum)
+        static void ConnectReferenceShapes(DirectedMultiGraph<VertexShape, EdgeShape> graph, string nodeOption, string offPageContent, string checkpointContent, Page[] pageList)
         {
+            // Note: for references, end nodes should point to start nodes to join the pages together
+            HashSet<string> pageNames = new HashSet<string>(pageList.Select(p => p.Name));
+            switch (nodeOption.Substring(1,1))
+            {
+                case "1":
+                    // off-page references
+                    var referenceStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == offPageContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
+                    var referenceEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == offPageContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
+                    foreach(var node in referenceStartNodes)
+                    {
+                        Console.Write(node.Id + $"(page: {node.PageName} - reference: {node.pageReference}, ");
+                    }
+                    Console.WriteLine();
+                    foreach (var node in referenceEndNodes)
+                    {
+                        Console.Write(node.Id + ", ");
+                    }
+                    // match references together and generate an edge to link them
+                    foreach (var endNode in referenceEndNodes)
+                    {
+                        foreach(var startNode in referenceStartNodes)
+                        {
+                            Console.WriteLine($"Trying to match {endNode.pageReference} and {startNode.PageName} && {startNode.pageReference} and {endNode.PageName}");
+                            if(endNode.pageReference == startNode.PageName && startNode.pageReference ==  endNode.PageName)
+                            {
+                                var referenceEdge = new EdgeShape
+                                {
+                                    Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
+                                    Text = "Reference link",
+                                    ToShape = endNode.Id,
+                                    FromShape = startNode.Id
+                                };
+                                graph.Add(endNode, startNode, referenceEdge);
+                                Console.WriteLine($"Adding edge from shape {startNode} to shape {endNode}");
+                            }
+                        }
+                    }
+                    break;
+                case "2":
+                    // checkpoints
+                    var checkpointStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
+                    var checkpointEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
+
+                    break;
+                case "3":
+                    // both
+                    referenceStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == offPageContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
+                    referenceEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == offPageContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
+                    checkpointStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
+                    checkpointEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
+                    break;
+                default:
+                    // none
+                    break;
+            }
+        }
+
+        static List<List<VertexShape>> GetAllPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file, Configuration config, Page[] pageList, int pageNum)
+        {
+            // maybe parameters could be compressed into a "config" object or something
             // first get the start and end nodes based on user specification
             IEnumerable<VertexShape>? startNodes;
             IEnumerable<VertexShape>? endNodes;
-            GetSpecifiedNodes(graph, nodeOption, startNodeContent, endNodeContent, out startNodes, out endNodes);
+            GetSpecifiedNodes(graph, config.NodeOption, config.StartNodeContent, config.EndNodeContent, out startNodes, out endNodes);
 
+            ConnectReferenceShapes(graph, config.NodeOption, config.OffPageContent, config.CheckpointContent, pageList);
             // list containing the paths containing each node
             var allPaths = new List<List<VertexShape>>();
 
@@ -468,8 +533,9 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        static void ExtractShapeToVertex(DirectedMultiGraph<VertexShape, EdgeShape> graph, IEnumerable<XElement>? shapes, HashSet<string> connectionShapes, StreamWriter file)
+        static void ExtractShapeToVertex(DirectedMultiGraph<VertexShape, EdgeShape> graph, IEnumerable<XElement>? shapes, HashSet<string> connectionShapes, StreamWriter file, string pageName)
         {
+            Console.WriteLine($"Page Name being extracted: {pageName}");
             // attributes to parse from the shapes
             string id;
             string? type;
@@ -496,6 +562,7 @@ namespace VisioParse.ConsoleHost
                                 XMaster = shape.Element("Master"),
                                 MasterId = masterId,
                                 XShape = shape,
+                                PageName = pageName
                             };
 
                             type = typeAttribute.Value;
@@ -505,11 +572,18 @@ namespace VisioParse.ConsoleHost
                                 string text = textElement.Value.Trim();
                                 vertex.Text = text;
                                 file.WriteLine($"Shape ID: {id}, Type: {type}, Master = {(masterId != null ? masterId : "null")}, Text: {text}");
-
                             }
                             else
                             {
                                 file.WriteLine($"Shape ID: {id}, Type: {type}, Master = {(masterId != null ? masterId : "null")}");
+                            }
+
+                            var hyperlinkSection = shape.Descendants("Section").FirstOrDefault(section => section.Attribute("N")?.Value == "Hyperlink"); // check if the shape is an off-page reference
+                            if (hyperlinkSection != null)
+                            {
+                                var subAddress = hyperlinkSection.Descendants("Cell").FirstOrDefault(cell => cell.Attribute("N")?.Value == "SubAddress")?.Attribute("V")?.Value;
+                                vertex.pageReference = subAddress;
+                                Console.WriteLine($"Shape {vertex.Id} has an off-page reference to: {subAddress}");
                             }
 
                             graph.AddVertex(vertex);
