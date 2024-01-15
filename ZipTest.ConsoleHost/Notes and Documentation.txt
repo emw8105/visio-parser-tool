@@ -104,3 +104,4 @@ IDEAL VISIO DESIGN PRACTICES
 - Make sure that all off-page references have their links attached properly or else the parser can't build a multi-flow path
 - STICK TO ONE FORMAT FOR STARTING AND ENDING NODES
 - Page names must be unique in order to differentiate them for off-page references
+- To use specified start and end nodes, ensure that start nodes have no edges pointing in to them and end nodes have no edges pointing out of them

@@ -12,12 +12,15 @@ namespace VisioParse.ConsoleHost
     public class CallflowHandler
     {
         // example files from solution:
-        // ECC IVR Call Flow V104.1_updated.vsdx, USPS ITHD IVR LiteBlue MFA Ticket 8_30_2023.vsdx,
-        // USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx, Basic.vsdx, Inbound Routing Design v1.18.vsdx
+        // for basic impleplementation and testing: Basic.vsdx,
+        // for a challenge: ECC IVR Call Flow V104.1_updated.vsdx, USPS ITHD IVR LiteBlue MFA Ticket 8_30_2023.vsdx, USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx
+        // for design practice differences: Inbound Routing Design v1.18.vsdx, Improved Inbound Routing Design v1.18.vsdx
+        // extra: DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
+        //      (doesn't work because under the hood, the master id of the starting/ending shapes are different and indiscriminate has hundreds of thousands of paths
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx";
+        public string FileName = "DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor
@@ -51,6 +54,7 @@ namespace VisioParse.ConsoleHost
 
             Config = new Configuration();
         }
+
         public void ExecutionCleanup()
         {
             Console.WriteLine("\nFinished parsing, check the output files for more info:\n" +
