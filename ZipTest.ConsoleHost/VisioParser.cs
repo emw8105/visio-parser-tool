@@ -535,7 +535,6 @@ namespace VisioParse.ConsoleHost
 
         static void ExtractShapeToVertex(DirectedMultiGraph<VertexShape, EdgeShape> graph, IEnumerable<XElement>? shapes, HashSet<string> connectionShapes, StreamWriter file, string pageName)
         {
-            Console.WriteLine($"Page Name being extracted: {pageName}");
             // attributes to parse from the shapes
             string id;
             string? type;
@@ -578,19 +577,15 @@ namespace VisioParse.ConsoleHost
                                 file.WriteLine($"Shape ID: {id}, Type: {type}, Master = {(masterId != null ? masterId : "null")}");
                             }
 
-                            if(vertex.MasterId == "377")
-                            {
-                                
-                                // not parsing for some reason
-                                var hyperlinkSection = shape.Descendants("Section").FirstOrDefault(section => section.Attribute("N")?.Value == "Hyperlink"); // check if the shape is an off-page reference
-                                Console.WriteLine($"Reference shape {vertex.Id}, hyper link section: {hyperlinkSection}");
+                                // first see if the shape has a hyperlink section, if so then drill down to get the subaddress which contains the page name for the off-page reference
+                                var hyperlinkSection = shape.Descendants(ns + "Section").FirstOrDefault(section => section.Attribute("N")?.Value == "Hyperlink");
+
                                 if (hyperlinkSection != null)
                                 {
-                                    var subAddress = hyperlinkSection.Descendants("Cell").FirstOrDefault(cell => cell.Attribute("N")?.Value == "SubAddress")?.Attribute("V")?.Value;
+                                    var subAddress = hyperlinkSection.Descendants(ns + "Row").Descendants(ns + "Cell").FirstOrDefault(cell => cell.Attribute("N")?.Value == "SubAddress")?.Attribute("V")?.Value;
                                     vertex.pageReference = subAddress;
                                     Console.WriteLine($"Shape {vertex.Id} has an off-page reference to: {subAddress}");
                                 }
-                            }
 
                             graph.AddVertex(vertex);
                         }
