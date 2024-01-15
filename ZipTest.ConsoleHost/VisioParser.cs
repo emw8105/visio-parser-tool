@@ -219,7 +219,7 @@ namespace VisioParse.ConsoleHost
                     var referenceEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == offPageContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
                     foreach(var node in referenceStartNodes)
                     {
-                        Console.Write(node.Id + $"(page: {node.PageName} - reference: {node.pageReference}, ");
+                        Console.Write(node.Id + $" (page: {node.PageName} - reference: {node.pageReference}, ");
                     }
                     Console.WriteLine();
                     foreach (var node in referenceEndNodes)
@@ -578,12 +578,18 @@ namespace VisioParse.ConsoleHost
                                 file.WriteLine($"Shape ID: {id}, Type: {type}, Master = {(masterId != null ? masterId : "null")}");
                             }
 
-                            var hyperlinkSection = shape.Descendants("Section").FirstOrDefault(section => section.Attribute("N")?.Value == "Hyperlink"); // check if the shape is an off-page reference
-                            if (hyperlinkSection != null)
+                            if(vertex.MasterId == "377")
                             {
-                                var subAddress = hyperlinkSection.Descendants("Cell").FirstOrDefault(cell => cell.Attribute("N")?.Value == "SubAddress")?.Attribute("V")?.Value;
-                                vertex.pageReference = subAddress;
-                                Console.WriteLine($"Shape {vertex.Id} has an off-page reference to: {subAddress}");
+                                
+                                // not parsing for some reason
+                                var hyperlinkSection = shape.Descendants("Section").FirstOrDefault(section => section.Attribute("N")?.Value == "Hyperlink"); // check if the shape is an off-page reference
+                                Console.WriteLine($"Reference shape {vertex.Id}, hyper link section: {hyperlinkSection}");
+                                if (hyperlinkSection != null)
+                                {
+                                    var subAddress = hyperlinkSection.Descendants("Cell").FirstOrDefault(cell => cell.Attribute("N")?.Value == "SubAddress")?.Attribute("V")?.Value;
+                                    vertex.pageReference = subAddress;
+                                    Console.WriteLine($"Shape {vertex.Id} has an off-page reference to: {subAddress}");
+                                }
                             }
 
                             graph.AddVertex(vertex);
