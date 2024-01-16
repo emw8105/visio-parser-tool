@@ -102,6 +102,7 @@ IDEAL VISIO DESIGN PRACTICES
 - Make sure that all connections are actually connected
 - Non-directed connections won't be used for test case calculation, they can be used to label things for human-readable portions but not for parsing
 - Make sure that all off-page references have their links attached properly or else the parser can't build a multi-flow path
-- STICK TO ONE FORMAT FOR STARTING AND ENDING NODES
 - Page names must be unique in order to differentiate them for off-page references
+- STICK TO ONE FORMAT FOR STARTING AND ENDING NODES
 - To use specified start and end nodes, ensure that start nodes have no edges pointing in to them and end nodes have no edges pointing out of them
+- For start and end nodes, try to use a basic shape to ensure that it will have a master ID
