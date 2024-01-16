@@ -20,7 +20,7 @@ namespace VisioParse.ConsoleHost
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx";
+        public string FileName = "USPS_GCX_NMCSC_IVRCallFlow_006 (1) - Copy.vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor

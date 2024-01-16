@@ -219,6 +219,7 @@ namespace VisioParse.ConsoleHost
                     // off-page references
                     var referenceStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == startOffPageContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
                     var referenceEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == endOffPageContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
+                    
                     foreach (var node in referenceStartNodes)
                     {
                         Console.Write(node.Id + $" (page: {node.PageName} - reference: {node.pageReference}, ");
@@ -228,6 +229,7 @@ namespace VisioParse.ConsoleHost
                     {
                         Console.Write(node.Id + ", ");
                     }
+
                     // match references together and generate an edge to link them
                     foreach (var endNode in referenceEndNodes)
                     {
