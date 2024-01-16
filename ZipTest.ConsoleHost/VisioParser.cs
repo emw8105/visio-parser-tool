@@ -273,7 +273,8 @@ namespace VisioParse.ConsoleHost
 
         static List<List<VertexShape>> GetAllPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file, Configuration config, Page[] pageList, int pageNum)
         {
-            // maybe parameters could be compressed into a "config" object or something
+            ConnectReferenceShapes(graph, config.NodeOption, config.StartOffPageContent, config.EndOffPageContent, config.CheckpointContent, pageList);
+
             // first get the start and end nodes based on user specification
             IEnumerable<VertexShape>? startNodes;
             IEnumerable<VertexShape>? endNodes;
@@ -291,7 +292,7 @@ namespace VisioParse.ConsoleHost
             endNodes.ToList().ForEach(node => file.Write($"{node.Id}, "));
             file.WriteLine();
 
-            ConnectReferenceShapes(graph, config.NodeOption, config.StartOffPageContent, config.EndOffPageContent, config.CheckpointContent, pageList);
+            
             // list containing the paths containing each node
             var allPaths = new List<List<VertexShape>>();
 
