@@ -303,19 +303,48 @@ namespace VisioParse.ConsoleHost
 
         static void CreateCheckpointEdges(IEnumerable<VertexShape>? checkpointStartNodes, IEnumerable<VertexShape>? checkpointEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
         {
+            // at the moment, "checkpoints" are my term for off-page references which don't have a reference, but it will probably be required to put the reference for this to work
+            // as a result, this part will likely not be used, so instead this function will be used for on-page references (match the text of start and end nodes on the same page)
+            //foreach (var startNode in checkpointStartNodes)
+            //{
+            //    // organize the format into parsable sections
+            //    startNode.pageReference = startNode.Text.Split(": ")[0].Trim();
+            //    startNode.vertexReference = startNode.Text.Split(": ")[1].Trim();
+            //    foreach (var endNode in checkpointEndNodes)
+            //    {
+            //        endNode.pageReference = endNode.Text.Split(": ")[0].Trim();
+            //        endNode.vertexReference = endNode.Text.Split(": ")[1].Trim();
+
+            //        if (endNode.pageReference == startNode.PageName && startNode.pageReference == endNode.PageName && startNode.vertexReference == endNode.vertexReference)
+            //        {
+            //            Console.WriteLine($"CREATING EDGE BETWEEN CHECKPOINTS: {endNode.Id} and {startNode.Id}");
+            //            var referenceEdge = new EdgeShape
+            //            {
+            //                Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
+            //                Text = "Reference link",
+            //                ToShape = endNode.Id,
+            //                FromShape = startNode.Id
+            //            };
+            //            graph.Add(endNode, startNode, referenceEdge);
+            //        }
+            //    }
+            //}
+
+
+            //Console.Write("Start node on-page references: ");
+            //checkpointStartNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
+            //Console.WriteLine();
+            //Console.Write("End node on-page references: ");
+            //checkpointEndNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
+            //Console.WriteLine();
+            // on-page reference connecting
             foreach (var startNode in checkpointStartNodes)
             {
-                // organize the format into parsable sections
-                startNode.pageReference = startNode.Text.Split(": ")[0].Trim();
-                startNode.vertexReference = startNode.Text.Split(": ")[1].Trim();
                 foreach (var endNode in checkpointEndNodes)
                 {
-                    endNode.pageReference = endNode.Text.Split(": ")[0].Trim();
-                    endNode.vertexReference = endNode.Text.Split(": ")[1].Trim();
-
-                    if (endNode.pageReference == startNode.PageName && startNode.pageReference == endNode.PageName && startNode.vertexReference == endNode.vertexReference)
+                    if (endNode.PageName == startNode.PageName && startNode.Text == endNode.Text)
                     {
-                        Console.WriteLine($"CREATING EDGE BETWEEN CHECKPOINTS: {endNode.Id} and {startNode.Id}");
+                        Console.WriteLine($"CREATING EDGE BETWEEN ON-PAGE REFERENCES: {endNode.Id + " (" + endNode.Text + ") "} and {startNode.Id + " (" + startNode.Text + ") "}");
                         var referenceEdge = new EdgeShape
                         {
                             Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
@@ -325,7 +354,6 @@ namespace VisioParse.ConsoleHost
                         };
                         graph.Add(endNode, startNode, referenceEdge);
                     }
-
                 }
             }
         }

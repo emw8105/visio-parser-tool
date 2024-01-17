@@ -17,12 +17,14 @@ namespace VisioParse.ConsoleHost
         // for basic impleplementation and testing: Basic.vsdx,
         // for a challenge: ECC IVR Call Flow V104.1_updated.vsdx, USPS ITHD IVR LiteBlue MFA Ticket 8_30_2023.vsdx, USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx
         // for design practice differences: Inbound Routing Design v1.18.vsdx, Improved Inbound Routing Design v1.18.vsdx
+        // for directory testing: CE_VCC_IVR_Callflow_V5.4.1117.vsdx
+        // for a comprehensive test: Comprehensive test.vsdx
         // extra: DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
         //      (doesn't work because under the hood, the master id of the starting/ending shapes are different and indiscriminate has hundreds of thousands of paths
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "USPS_GCX_NMCSC_IVRCallFlow_006 (1) - Copy.vsdx";
+        public string FileName = "Comprehensive test.vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor

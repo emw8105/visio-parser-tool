@@ -64,11 +64,10 @@ namespace VisioParse.ConsoleHost
 
             Console.WriteLine("Please select from the additional configuration options:" +
                 "\n1. Multi-flow parsing using off-page references" +
-                "\n2. Multi-flow parsing using checkpoints" +
-                "\n3. Multi-flow parsing using both off-page references and checkpoints" +
+                "\n2. Multi-flow parsing using on-page references" +
+                "\n3. Multi-flow parsing using both off-page references and on-page references" +
                 "\n4. No multi-flow parsing");
-            Console.WriteLine("Note: The off-page references must all be hyperlinked properly and checkpoints must follow the following format:" +
-                "pageName: checkPointIdentifier (ex: Legend: A)");
+            Console.WriteLine("Note: The off-page references must all be hyperlinked properly and on-page references must contain only the text of their identifiers (ex: A");
             menuChoice = Console.ReadLine();
             switch (menuChoice)
             {
@@ -82,17 +81,17 @@ namespace VisioParse.ConsoleHost
 
                 case "2":
                     NodeOption += "2";
-                    Console.WriteLine("Please enter the Master ID for checkpoint/on-page reference shapes");
+                    Console.WriteLine("Please enter the Master ID for on-page reference shapes");
                     CheckpointContent = Console.ReadLine();
                     break;
 
                 case "3":
                     NodeOption += "3";
-                    Console.WriteLine("Please enter the Master ID for the starting off-page reference shapes (i.e. 'FROM: X' nodes");
+                    Console.WriteLine("Please enter the Master ID for the starting off-page reference shapes (i.e. 'FROM: X' nodes)");
                     StartOffPageContent = Console.ReadLine();
-                    Console.WriteLine("Please enter the Master ID for the ending off-page reference shapes (i.e. 'TO: X' nodes");
+                    Console.WriteLine("Please enter the Master ID for the ending off-page reference shapes (i.e. 'TO: X' nodes)");
                     EndOffPageContent = Console.ReadLine();
-                    Console.WriteLine("Please enter the Checkpoint ID");
+                    Console.WriteLine("Please enter the Master ID for the on-page reference shapes");
                     CheckpointContent = Console.ReadLine();
                     break;
 

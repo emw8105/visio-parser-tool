@@ -62,8 +62,8 @@ namespace VisioParse.ConsoleHost
 
                     // print out the graph data parsed from the page
                     callflow.PageInfoFile.WriteLine($"Page {i} has {graph.Vertices.Count} vertices and {graph.NumberOfEdges} edges");
-                    callflow.PageInfoFile.WriteLine($"\nGraph notation of page {i}:");
-                    PrintPageInformation(graph, callflow.PageInfoFile);
+                    //callflow.PageInfoFile.WriteLine($"\nGraph notation of page {i}:");
+                    //PrintPageInformation(graph, callflow.PageInfoFile);
 
                     i++;
                 }
@@ -76,8 +76,9 @@ namespace VisioParse.ConsoleHost
                 var pathCount = pathSet.Count;
 
                 // find the minimum paths for test cases
-                if (pathSet.Count > 0)
+                if (pathCount > 0)
                 {
+                    Console.WriteLine("Calculating minimum paths...");
                     var minPathSet = GetMinimumPaths(multiPageGraph, pathSet, callflow.MinPathOutputFile);
                     var minPathCount = minPathSet.Count;
 
@@ -330,22 +331,20 @@ namespace VisioParse.ConsoleHost
             return edges;
         }
 
-        
-
-        static void PrintPageInformation(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file)
-        {
-            file.WriteLine("Vertices:");
-            foreach (var vertex in graph.Vertices)
-            {
-                file.WriteLine($"Vertex: {vertex.Id}, InDegree: {graph.GetInDegree(vertex)}, OutDegree: {graph.GetOutDegree(vertex)}, Text: {vertex.Text}");
-            }
-            file.WriteLine("\nEdges:");
-            foreach (var edge in graph.Edges)
-            {
-                file.WriteLine($"Edge: {edge.Id} connects vertex {edge.FromShape} to vertex {edge.ToShape}");
-            }
-            file.WriteLine();
-        }
+        //static void PrintPageInformation(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file)
+        //{
+        //    file.WriteLine("Vertices:");
+        //    foreach (var vertex in graph.Vertices)
+        //    {
+        //        file.WriteLine($"Vertex: {vertex.Id}, InDegree: {graph.GetInDegree(vertex)}, OutDegree: {graph.GetOutDegree(vertex)}, Text: {vertex.Text}");
+        //    }
+        //    file.WriteLine("\nEdges:");
+        //    foreach (var edge in graph.Edges)
+        //    {
+        //        file.WriteLine($"Edge: {edge.Id} connects vertex {edge.FromShape} to vertex {edge.ToShape}");
+        //    }
+        //    file.WriteLine();
+        //}
 
         static void PrintPathInformation(List<List<VertexShape>> pathSet, StreamWriter file, string property)
         {

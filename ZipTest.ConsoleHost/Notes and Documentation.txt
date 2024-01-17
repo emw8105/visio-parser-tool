@@ -106,3 +106,6 @@ IDEAL VISIO DESIGN PRACTICES
 - STICK TO ONE FORMAT FOR STARTING AND ENDING NODES
 - To use specified start and end nodes, ensure that start nodes have no edges pointing in to them and end nodes have no edges pointing out of them
 - For start and end nodes, try to use a basic shape to ensure that it will have a master ID
+- Avoid using connections in a legend page or other non-flow page to prevent paths from being generated
+- Multiple on-page references must be used appropriately, avoid using more than one pair of start/end on-page references with the same identifer on the same page
+	- However, multiple on-page end nodes can refer to a single on-page start node and vice-versa, simply don't use the same identifier for more than one pair
