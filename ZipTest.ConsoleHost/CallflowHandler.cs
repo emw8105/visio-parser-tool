@@ -84,6 +84,8 @@ namespace VisioParse.ConsoleHost
 
         public void ExecutionCleanup()
         {
+            CleanupFiles(); // flush buffer first so that all the text is printed for inspection
+
             Console.WriteLine("\nFinished parsing, check the output files for more info:\n" +
                 "1. Rezip the extracted files to inspect Shape ID's for permutation comparison\n" +
                 "2. Exit without deleting extracted files\n" +
@@ -144,8 +146,6 @@ namespace VisioParse.ConsoleHost
                         break;
                 }
             } while (!valid);
-
-            CleanupFiles();
         }
 
         public void CleanupFiles()
@@ -154,6 +154,8 @@ namespace VisioParse.ConsoleHost
             PageInfoFile.Close();
             PathOutputFile.Flush();
             PathOutputFile.Close();
+            MinPathOutputFile.Flush();
+            MinPathOutputFile.Close();
         }
     }
 }

@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Diagnostics.Metrics;
 using System.Reflection.Metadata;
 using System.IO.Compression;
+using System.Drawing;
 
 // Written by Evan Wright
 // TDL: see if the edge between the vertexes in the path can have it's text printed (if it has any)
