@@ -9,15 +9,9 @@ using System.ComponentModel;
 using System.Diagnostics.Metrics;
 using System.Reflection.Metadata;
 using System.IO.Compression;
-using System.IO.MemoryMappedFiles;
-using ArchitectConvert.ConsoleHost;
-using System.Drawing;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using static System.Net.Mime.MediaTypeNames;
 
 // Written by Evan Wright
+// TDL: see if the edge between the vertexes in the path can have it's text printed (if it has any)
 
 namespace VisioParse.ConsoleHost
 {
@@ -27,25 +21,18 @@ namespace VisioParse.ConsoleHost
 
         static void Main(string[] args)
         {
-            // Use callflow handler to manage file based setup and modifications, including inserting the desired file name to parse
+            // use the callflow handler to manage file based setup and modifications, also for configuration management
+            // upon construction will set up the output files and configuration settings, then extract the XML files from the desired Visio
             CallflowHandler callflow = new CallflowHandler();
 
-            // Configuration options
-            callflow.Config.ConfigurationSetup();
+            // use the graph builder to piece together the graph either by using the XML files or information stored in the shapes
+            GraphBuilder graphBuilder = new GraphBuilder(callflow);
 
-            // extract and read xml file contents
+            // read the extracted XML contents
             try
             {
-                Console.WriteLine("extracting file to " + callflow.ExtractPath);
-                ZipFile.ExtractToDirectory(callflow.ZipPath, callflow.ExtractPath); // convert given visio file to xml components
-                Console.WriteLine("finished extraction, parsing components...");
-
                 // first parse "pages.xml" to find page count and page names
-                XDocument pagesXml;
-                using (XmlTextReader documentReader = new XmlTextReader(callflow.ExtractPath + @"\visio\pages\pages.xml"))
-                {
-                    pagesXml = XDocument.Load(documentReader);
-                }
+                XDocument pagesXml = callflow.GetPagesXML();
 
                 var xPages = pagesXml.Descendants(ns + "Page");
                 var pageCount = xPages.Count();
@@ -54,8 +41,6 @@ namespace VisioParse.ConsoleHost
 
                 Console.WriteLine($"Total number of pages: {pageCount}");
                 callflow.PageInfoFile.WriteLine($"Total number of pages: {pageCount}");
-
-                XDocument xmlDoc; // used for current xml being parsed
 
                 Page[] pageList = new Page[pageCount];
                 var multiPageGraph = new DirectedMultiGraph<VertexShape, EdgeShape>(); // used for multi-flow parsing (off-page references)
@@ -68,13 +53,10 @@ namespace VisioParse.ConsoleHost
                     Console.WriteLine($"Parsing page {i}: {pageName}");
                     callflow.PageInfoFile.WriteLine($"\n----Page {i}: {pageName}----");
 
-                    using (XmlTextReader reader = new XmlTextReader(callflow.ExtractPath + @"\visio\pages\page" + i + ".xml"))
-                    {
-                        xmlDoc = XDocument.Load(reader);
-                    }
+                    XDocument xmlDoc = callflow.GetPageXML(i); // used for current xml being parsed
 
-                    var graph = GraphBuilder.BuildGraph(xmlDoc, callflow, i, pageName);
-                    MergePageGraph(graph, multiPageGraph); // combine all pages into one graph to parse between off-page references
+                    var graph = graphBuilder.BuildGraph(xmlDoc, i, pageName);
+                    graphBuilder.MergePageGraph(graph, multiPageGraph); // combine all pages into one graph to parse between off-page references
 
                     pageList[i - 1] = BuildPage(graph, page, i);
 
@@ -85,6 +67,9 @@ namespace VisioParse.ConsoleHost
 
                     i++;
                 }
+
+                // once all of the pages have added their graphs together, connect each of their reference shapes together to join desired page flows
+                graphBuilder.ConnectReferenceShapes(multiPageGraph, pageList);
 
                 Console.WriteLine("Generating permutations...");
                 var pathSet = GetAllPermutations(multiPageGraph, callflow.PathOutputFile, callflow.Config, pageList, i);
@@ -98,21 +83,14 @@ namespace VisioParse.ConsoleHost
 
                     callflow.MinPathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
                     callflow.PageInfoFile.WriteLine($"Number of paths to test: {pathCount}\n");
-                    Console.WriteLine($"Number of paths to test: {pathCount}\n");
                     pathCountTotal += pathCount;
                     minPathCountTotal += minPathCount;
                 }
-
 
                 Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
                 Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
                 callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
                 callflow.PathOutputFile.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
-
-                callflow.PageInfoFile.Flush();
-                callflow.PageInfoFile.Close();
-                callflow.PathOutputFile.Flush();
-                callflow.PathOutputFile.Close();
 
                 callflow.ExecutionCleanup();
             }
@@ -120,22 +98,7 @@ namespace VisioParse.ConsoleHost
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
 
-                callflow.PageInfoFile.Flush();
-                callflow.PageInfoFile.Close();
-                callflow.PathOutputFile.Flush();
-                callflow.PathOutputFile.Close();
-            }
-        }
-
-        static void MergePageGraph(DirectedMultiGraph<VertexShape, EdgeShape> graph, DirectedMultiGraph<VertexShape, EdgeShape> multiPageGraph)
-        {
-            foreach (var vertex in graph.Vertices)
-            {
-                multiPageGraph.AddVertex(vertex);
-            }
-            foreach (var edge in graph.Edges)
-            {
-                multiPageGraph.Add(graph.Vertices.First(v => v.Id == edge.FromShape), graph.Vertices.First(v => v.Id == edge.ToShape), edge);
+                callflow.CleanupFiles();
             }
         }
 
@@ -172,8 +135,6 @@ namespace VisioParse.ConsoleHost
 
         static List<List<VertexShape>> GetAllPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file, Configuration config, Page[] pageList, int pageNum)
         {
-            GraphBuilder.ConnectReferenceShapes(graph, config.NodeOption, config.StartOffPageContent, config.EndOffPageContent, config.CheckpointContent, pageList);
-
             // first get the start and end nodes based on user specification
             IEnumerable<VertexShape>? startNodes;
             IEnumerable<VertexShape>? endNodes;
@@ -210,16 +171,8 @@ namespace VisioParse.ConsoleHost
 
             if (allPaths.Count > 0)
             {
-                
-
                 file.WriteLine("Paths:");
                 PrintPathInformation(allPaths, file, "Id");
-
-                //var minimalPathSet = GetMinimumPaths(graph, allPaths, file);
-
-                file.WriteLine($"\nTotal number of paths on Page {pageNum}: {numPaths}");
-                //file.WriteLine($"Minimum number of paths on Page {pageNum} to cover all cases: {minimalPathSet.Count}");
-
             }
             else
             {

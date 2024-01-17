@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using System.Xml;
 
 namespace VisioParse.ConsoleHost
 {
@@ -52,7 +54,30 @@ namespace VisioParse.ConsoleHost
             File.WriteAllText(pathsFilePath, "Beginning output\n");
             MinPathOutputFile = File.AppendText(pathsFilePath);
 
+            // generate a configuration for this parsing with options selected by the user
             Config = new Configuration();
+            Config.ConfigurationSetup();
+
+            // extract the XML contents
+            Console.WriteLine("extracting file to " + ExtractPath);
+            ZipFile.ExtractToDirectory(ZipPath, ExtractPath); // convert given visio file to xml components
+            Console.WriteLine("finished extraction, parsing components...");
+        }
+
+        public XDocument GetPagesXML()
+        {
+            using (XmlTextReader documentReader = new XmlTextReader(ExtractPath + @"\visio\pages\pages.xml"))
+            {
+                return XDocument.Load(documentReader);
+            }
+        }
+
+        public XDocument GetPageXML(int pageNum)
+        {
+            using (XmlTextReader reader = new XmlTextReader(ExtractPath + @"\visio\pages\page" + pageNum + ".xml"))
+            {
+                return XDocument.Load(reader);
+            }
         }
 
         public void ExecutionCleanup()
@@ -117,6 +142,16 @@ namespace VisioParse.ConsoleHost
                         break;
                 }
             } while (!valid);
+
+            CleanupFiles();
+        }
+
+        public void CleanupFiles()
+        {
+            PageInfoFile.Flush();
+            PageInfoFile.Close();
+            PathOutputFile.Flush();
+            PathOutputFile.Close();
         }
     }
 }

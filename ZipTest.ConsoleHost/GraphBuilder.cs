@@ -11,10 +11,16 @@ namespace VisioParse.ConsoleHost
 {
     public class GraphBuilder
     {
+        private readonly CallflowHandler Callflow;
 
         private static readonly XNamespace ns = "http://schemas.microsoft.com/office/visio/2012/main"; // needed for queries to match elements, use for all xml parsing
 
-        public static DirectedMultiGraph<VertexShape, EdgeShape> BuildGraph(XDocument xmlDoc, CallflowHandler callflow, int pageNum, string pageName)
+        public GraphBuilder(CallflowHandler callflow)
+        {
+            Callflow = callflow;
+        }
+
+        public DirectedMultiGraph<VertexShape, EdgeShape> BuildGraph(XDocument xmlDoc, int pageNum, string pageName)
         {
             // shapes include both vertices and edges, some pages have separate shapes within shapes that are missing various properties, must handle if using this
             // var shapes = xmlDoc.Root.Element(ns + "Shapes").Elements(ns + "Shape"); // use this parsing instead to only get top-level shapes
@@ -33,17 +39,17 @@ namespace VisioParse.ConsoleHost
             MatchConnections(connections, connectionShapes, pageEdges, shapes);
 
             // Extract and print shape information from the current page, convert each non-edge shape into a vertex
-            ExtractShapeToVertex(graph, shapes, connectionShapes, callflow.PageInfoFile, pageName);
+            ExtractShapeToVertex(graph, shapes, connectionShapes, Callflow.PageInfoFile, pageName);
 
             // when shapes are converted to vertices, the text is edited so save the edited page
-            xmlDoc.Save(callflow.ExtractPath + @"\visio\pages\page" + pageNum + ".xml");
+            xmlDoc.Save(Callflow.ExtractPath + @"\visio\pages\page" + pageNum + ".xml");
 
             // unfortunately, can't add an edge without the vertex existing
             // but can't add vertexes until we determine which shapes are connections
             // this is used to assign the edge placements in the graph themselves using their stored data
             AssignEdges(pageEdges, graph);
 
-            // sometimes tables and other extra visual elements are added as shapes
+            // sometimes tables and other extra visual elements are added as shapes so remove them from the graph
             graph.RemoveZeroDegreeNodes();
 
             return graph;
@@ -231,8 +237,29 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        public static void ConnectReferenceShapes(DirectedMultiGraph<VertexShape, EdgeShape> graph, string nodeOption, string startOffPageContent, string endOffPageContent, string checkpointContent, Page[] pageList)
+        public void MergePageGraph(DirectedMultiGraph<VertexShape, EdgeShape> graph, DirectedMultiGraph<VertexShape, EdgeShape> mergedGraph)
         {
+            // add every vertex
+            graph.Vertices.ToList().ForEach(vertex => mergedGraph.AddVertex(vertex));
+
+            // add every edge
+            graph.Edges.ToList().ForEach(edge =>
+            {
+                mergedGraph.Add(
+                    graph.Vertices.First(v => v.Id == edge.FromShape),
+                    graph.Vertices.First(v => v.Id == edge.ToShape),
+                    edge
+                );
+            });
+        }
+
+        public void ConnectReferenceShapes(DirectedMultiGraph<VertexShape, EdgeShape> graph, Page[] pageList)
+        {
+            var nodeOption = Callflow.Config.NodeOption;
+            var startOffPageContent = Callflow.Config.StartOffPageContent;
+            var endOffPageContent = Callflow.Config.EndOffPageContent;
+            var checkpointContent = Callflow.Config.CheckpointContent;
+
             // Note: for references, end nodes should point to start nodes to join the pages together
             HashSet<string> pageNames = new HashSet<string>(pageList.Select(p => p.Name));
             switch (nodeOption.Substring(1, 1))
@@ -310,10 +337,10 @@ namespace VisioParse.ConsoleHost
             {
                 foreach (var startNode in referenceStartNodes)
                 {
-                    Console.WriteLine($"Trying to match {endNode.pageReference} and {startNode.PageName} && {startNode.pageReference} and {endNode.PageName}");
+                    //Console.WriteLine($"Trying to match {endNode.pageReference} and {startNode.PageName} && {startNode.pageReference} and {endNode.PageName}");
                     if (endNode.pageReference == startNode.PageName && startNode.pageReference == endNode.PageName)
                     {
-                        Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: {endNode.Id} and {startNode.Id}");
+                        Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: {endNode.Text} and {startNode.Text}");
                         var referenceEdge = new EdgeShape
                         {
                             Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
