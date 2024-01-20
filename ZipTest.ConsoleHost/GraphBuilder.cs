@@ -355,8 +355,6 @@ namespace VisioParse.ConsoleHost
             }
 
             // check for connections using the dictionaries
-            // multiple end nodes can point to one start node, but a start node can't split
-            // take advantage of that by using hashmaps instead
             foreach (var endNodeKey in endNodesMap.Keys)
             {
                 if (startNodesMap.ContainsKey(endNodeKey))
@@ -379,7 +377,7 @@ namespace VisioParse.ConsoleHost
                 else
                 {
                     // detect unmatched connections
-                    Console.WriteLine($"No matching end node found for start node: {endNodeKey}");
+                    Console.WriteLine($"No matching start node found for end node: {endNodeKey}");
                 }
             }
 
