@@ -338,25 +338,71 @@ namespace VisioParse.ConsoleHost
             //checkpointEndNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
             //Console.WriteLine();
             // on-page reference connecting
+            Dictionary<string, VertexShape> startNodesMap = new Dictionary<string, VertexShape>();
+            Dictionary<string, VertexShape> endNodesMap = new Dictionary<string, VertexShape>();
+
+            // populate the dictionaries with nodes
             foreach (var startNode in checkpointStartNodes)
             {
-                foreach (var endNode in checkpointEndNodes)
+                string key = $"{startNode.PageName}_{startNode.Text}";
+                startNodesMap[key] = startNode;
+            }
+
+            foreach (var endNode in checkpointEndNodes)
+            {
+                string key = $"{endNode.PageName}_{endNode.Text}";
+                endNodesMap[key] = endNode;
+            }
+
+            // check for connections using the dictionaries
+            // multiple end nodes can point to one start node, but a start node can't split
+            // take advantage of that by using hashmaps instead
+            foreach (var endNodeKey in endNodesMap.Keys)
+            {
+                if (startNodesMap.ContainsKey(endNodeKey))
                 {
-                    if (endNode.PageName == startNode.PageName && startNode.Text == endNode.Text)
+                    var startNode = startNodesMap[endNodeKey];
+                    var endNode = endNodesMap[endNodeKey];
+
+                    Console.WriteLine($"CREATING EDGE BETWEEN ON-PAGE REFERENCES: {endNode.Id + " (" + endNode.Text + ") "} and {startNode.Id + " (" + startNode.Text + ") "}");
+
+                    var referenceEdge = new EdgeShape
                     {
-                        Console.WriteLine($"CREATING EDGE BETWEEN ON-PAGE REFERENCES: {endNode.Id + " (" + endNode.Text + ") "} and {startNode.Id + " (" + startNode.Text + ") "}");
-                        var referenceEdge = new EdgeShape
-                        {
-                            Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
-                            Text = "Reference link",
-                            ToShape = endNode.Id,
-                            FromShape = startNode.Id
-                        };
-                        graph.Add(endNode, startNode, referenceEdge);
-                    }
+                        Id = Guid.NewGuid().ToString(),
+                        Text = "Reference link",
+                        ToShape = endNode.Id,
+                        FromShape = startNode.Id
+                    };
+
+                    graph.Add(endNode, startNode, referenceEdge);
+                }
+                else
+                {
+                    // detect unmatched connections
+                    Console.WriteLine($"No matching end node found for start node: {endNodeKey}");
                 }
             }
-        }
+
+        //    foreach (var startNode in checkpointStartNodes)
+        //    {
+        //        foreach (var endNode in checkpointEndNodes)
+        //        {
+        //            if (endNode.PageName == startNode.PageName && startNode.Text == endNode.Text)
+        //            {
+        //                Console.WriteLine($"CREATING EDGE BETWEEN ON-PAGE REFERENCES: {endNode.Id + " (" + endNode.Text + ") "} and {startNode.Id + " (" + startNode.Text + ") "}");
+        //                var referenceEdge = new EdgeShape
+        //                {
+        //                    Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
+        //                    Text = "Reference link",
+        //                    ToShape = endNode.Id,
+        //                    FromShape = startNode.Id
+        //                };
+        //                graph.Add(endNode, startNode, referenceEdge);
+        //            }
+        //        }
+        //    }
+        //}
+    }
 
         static void CreateReferenceEdges(IEnumerable<VertexShape>? referenceStartNodes, IEnumerable<VertexShape>? referenceEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
         {

@@ -14,6 +14,9 @@ namespace VisioParse.ConsoleHost
     public class CallflowHandler
     {
         // example files from solution:
+        // note that USPS flows don't have all references attached and use extra connections for start/end nodes, dont always use the same end node
+        // DCW and CE use return statements
+
         // for basic impleplementation and testing: Basic.vsdx,
         // for a challenge: ECC IVR Call Flow V104.1_updated.vsdx, USPS ITHD IVR LiteBlue MFA Ticket 8_30_2023.vsdx, USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx
         // for design practice differences: Inbound Routing Design v1.18.vsdx, Improved Inbound Routing Design v1.18.vsdx
@@ -24,7 +27,7 @@ namespace VisioParse.ConsoleHost
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "Comprehensive test.vsdx";
+        public string FileName = "new DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor

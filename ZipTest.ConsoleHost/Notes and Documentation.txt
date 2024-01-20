@@ -98,14 +98,24 @@ after that, do the permutations as normal on the multigraph, find some kind of w
 
 
 IDEAL VISIO DESIGN PRACTICES
+General tips:
 - Don't make dense flows, make long ones (i.e. shapes shouldn't have paragraphs of text, the more concise the file is the better it will be for readability later, split into multiple shapes if necessary)
 - Make sure that all connections are actually connected
 - Non-directed connections won't be used for test case calculation, they can be used to label things for human-readable portions but not for parsing
-- Make sure that all off-page references have their links attached properly or else the parser can't build a multi-flow path
 - Page names must be unique in order to differentiate them for off-page references
-- STICK TO ONE FORMAT FOR STARTING AND ENDING NODES
+
+Start/End formatting:
+- stick to one format for start and end nodes, as well as on-page and off-page references
 - To use specified start and end nodes, ensure that start nodes have no edges pointing in to them and end nodes have no edges pointing out of them
 - For start and end nodes, try to use a basic shape to ensure that it will have a master ID
-- Avoid using connections in a legend page or other non-flow page to prevent paths from being generated
+- For start nodes, don't attach extra connections for extra visualization (i.e. a picture of a person to represent an agent pointing into a start node)
+	- start nodes should not have any incoming connections, end nodes should not have any outgoing connections, else they will not be recognized properly
+
+Reference formatting:
+- Avoid using connections in a legend page or other non-flow page to prevent unnecessary paths from being generated when parsing indiscriminately
 - Multiple on-page references must be used appropriately, avoid using more than one pair of start/end on-page references with the same identifer on the same page
 	- However, multiple on-page end nodes can refer to a single on-page start node and vice-versa, simply don't use the same identifier for more than one pair
+- Don't use the on-page reference shape as off-page references, the paths will not traverse through that shape.
+- Off-page references must have a matching off-page reference that points back to it
+	- As a result, ensure that an off-page reference doesn't just send you to a page that begins at a start node
+- Make sure that all off-page references have their links attached properly or else the parser can't build a multi-flow path

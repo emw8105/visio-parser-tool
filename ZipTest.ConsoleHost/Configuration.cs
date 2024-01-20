@@ -67,7 +67,7 @@ namespace VisioParse.ConsoleHost
                 "\n2. Multi-flow parsing using on-page references" +
                 "\n3. Multi-flow parsing using both off-page references and on-page references" +
                 "\n4. No multi-flow parsing");
-            Console.WriteLine("Note: The off-page references must all be hyperlinked properly and on-page references must contain only the text of their identifiers (ex: A");
+            Console.WriteLine("Note: The off-page references must all be hyperlinked properly and on-page references must contain only the text of their identifiers (ex: A)");
             menuChoice = Console.ReadLine();
             switch (menuChoice)
             {
