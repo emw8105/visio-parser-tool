@@ -337,7 +337,9 @@ namespace VisioParse.ConsoleHost
             //Console.Write("End node on-page references: ");
             //checkpointEndNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
             //Console.WriteLine();
+
             // on-page reference connecting
+            Console.WriteLine("Checking for on-page references...");
             Dictionary<string, VertexShape> startNodesMap = new Dictionary<string, VertexShape>();
             Dictionary<string, VertexShape> endNodesMap = new Dictionary<string, VertexShape>();
 
@@ -404,6 +406,14 @@ namespace VisioParse.ConsoleHost
 
         static void CreateReferenceEdges(IEnumerable<VertexShape>? referenceStartNodes, IEnumerable<VertexShape>? referenceEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
         {
+            //Console.WriteLine("Checking for off-page references...");
+            //Console.Write("Start node off-page references: ");
+            //referenceStartNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
+            //Console.WriteLine();
+            //Console.Write("End node off-page references: ");
+            //referenceEndNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
+            //Console.WriteLine();
+
             // match references together and generate an edge to link them
             foreach (var endNode in referenceEndNodes)
             {
