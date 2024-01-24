@@ -80,7 +80,16 @@ namespace VisioParse.ConsoleHost
                 if (pathCount > 0)
                 {
                     Console.WriteLine("Calculating minimum paths...");
+
+                    Stopwatch stopwatch = new Stopwatch();
+                    stopwatch.Start();
+
                     var minPathSet = GetMinimumPaths(multiPageGraph, pathSet, callflow.MinPathOutputFile);
+
+                    stopwatch.Stop();
+                    long elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+                    Console.WriteLine($"Elapsed Time: {elapsedMilliseconds} milliseconds");
+
                     var minPathCount = minPathSet.Count;
 
                     callflow.MinPathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
@@ -269,9 +278,10 @@ namespace VisioParse.ConsoleHost
         static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
         {
             // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
-            var uniqueEdges = graph.Edges.Distinct().ToList();
+            var uniqueEdges = new HashSet<EdgeShape>(graph.Edges.Distinct());
+
             // set to keep track of covered edges
-            HashSet<EdgeShape> coveredEdges = new HashSet<EdgeShape>();
+            var coveredEdges = new HashSet<EdgeShape>();
 
             // list of minimal paths covering all unique edges
             var minimalPathSet = new List<List<VertexShape>>();
@@ -281,11 +291,11 @@ namespace VisioParse.ConsoleHost
             {
                 // sort paths by the number of new uncovered edges
                 allPaths.Sort((path1, path2) =>
-                {
-                    int uncoveredEdgesCount1 = CountUncoveredEdges(graph, path1, uniqueEdges, coveredEdges);
-                    int uncoveredEdgesCount2 = CountUncoveredEdges(graph, path2, uniqueEdges, coveredEdges);
-                    return uncoveredEdgesCount2.CompareTo(uncoveredEdgesCount1);
-                });
+                    {
+                        int uncoveredEdgesCount1 = CountUncoveredEdges(graph, path1, uniqueEdges, coveredEdges);
+                        int uncoveredEdgesCount2 = CountUncoveredEdges(graph, path2, uniqueEdges, coveredEdges);
+                        return uncoveredEdgesCount2.CompareTo(uncoveredEdgesCount1);
+                    });
 
                 // select the path with the maximum number of new uncovered edges
                 var path = allPaths.FirstOrDefault(p => CountUncoveredEdges(graph, p, uniqueEdges, coveredEdges) > 0);
@@ -313,7 +323,7 @@ namespace VisioParse.ConsoleHost
             return minimalPathSet;
         }
 
-        static int CountUncoveredEdges(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<VertexShape> path, List<EdgeShape> uniqueEdges, HashSet<EdgeShape> coveredEdges)
+        static int CountUncoveredEdges(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<VertexShape> path, HashSet<EdgeShape> uniqueEdges, HashSet<EdgeShape> coveredEdges)
             => GetEdgesFromPath(graph, path).Count(edge => uniqueEdges.Contains(edge) && !coveredEdges.Contains(edge));
 
         static List<EdgeShape> GetEdgesFromPath(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<VertexShape> path)

@@ -24,10 +24,11 @@ namespace VisioParse.ConsoleHost
         // for a comprehensive test: Comprehensive test.vsdx
         // extra: DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
         //      (doesn't work because under the hood, the master id of the starting/ending shapes are different and indiscriminate has hundreds of thousands of paths
+        // best testcase: new DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
 
         // set these values prior to running program depending on user's directory
         public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "new DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx";
+        public string FileName = "Improved Inbound Routing Design v1.18.vsdx";
         public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
 
         // generated at runtime using constructor
