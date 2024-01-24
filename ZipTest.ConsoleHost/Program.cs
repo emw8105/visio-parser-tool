@@ -10,13 +10,14 @@ using System.Diagnostics.Metrics;
 using System.Reflection.Metadata;
 using System.IO.Compression;
 using System.Drawing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 // Written by Evan Wright
 // TDL: see if the edge between the vertexes in the path can have it's text printed (if it has any)
 
 namespace VisioParse.ConsoleHost
 {
-    class VisioParser
+    class Program
     {
         private static readonly XNamespace ns = "http://schemas.microsoft.com/office/visio/2012/main"; // needed for queries to match elements, use for all xml parsing
 
@@ -163,7 +164,7 @@ namespace VisioParse.ConsoleHost
             endNodes.ToList().ForEach(node => file.Write($"{node.Id}, "));
             file.WriteLine();
 
-            
+
             // list containing the paths containing each node
             var allPaths = new List<List<VertexShape>>();
 
@@ -183,7 +184,7 @@ namespace VisioParse.ConsoleHost
             if (allPaths.Count > 0)
             {
                 file.WriteLine("Paths:");
-                PrintPathInformation(allPaths, file, "Id");
+                PrintPathID(allPaths, file);
             }
             else
             {
@@ -231,49 +232,6 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        // this algorithm is much faster but is lazy, will result in approximately 2x as many minimum tests which defeats the purpose
-        //static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
-        //{
-        //    // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
-        //    var uniqueEdges = graph.Edges.Distinct().ToList();
-        //    HashSet<EdgeShape> coveredEdges = new HashSet<EdgeShape>();
-
-        //    // list of minimal paths covering all unique edges
-        //    var minimalPathSet = new List<List<VertexShape>>();
-
-        //    // loop through paths and add to minimalPathSet if it covers a unique edge
-        //    foreach (var path in allPaths)
-        //    {
-        //        var pathCoversUniqueEdge = false;
-
-        //        for (int i = 0; i < path.Count - 1; i++)
-        //        {
-        //            VertexShape source = path[i];
-        //            VertexShape target = path[i + 1];
-
-        //            // find the edge from source to target
-        //            if (graph.GetEdges(source, target).Any(edge => uniqueEdges.Contains(edge) && !coveredEdges.Contains(edge)))
-        //            {
-        //                pathCoversUniqueEdge = true;
-        //                coveredEdges.UnionWith(graph.GetEdges(source, target));
-        //            }
-        //        }
-
-        //        if (pathCoversUniqueEdge)
-        //        {
-        //            minimalPathSet.Add(path);
-        //        }
-        //    }
-
-        //    // print the minimal paths
-        //    file.WriteLine("\nMinimal paths covering all unique edges:");
-        //    PrintPathInformation(minimalPathSet, file, "Id");
-        //    file.WriteLine("\nText for minimum paths:");
-        //    PrintPathInformation(minimalPathSet, file, "Text");
-
-        //    return minimalPathSet;
-        //}
-
         // this algorithm takes up 95% of runtime and was possibly 50% of the total brainpower
         static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
         {
@@ -289,106 +247,73 @@ namespace VisioParse.ConsoleHost
             // while there are still uncovered edges
             while (coveredEdges.Count < uniqueEdges.Count)
             {
-                // sort paths by the number of new uncovered edges
-                allPaths.Sort((path1, path2) =>
-                    {
-                        int uncoveredEdgesCount1 = CountUncoveredEdges(graph, path1, uniqueEdges, coveredEdges);
-                        int uncoveredEdgesCount2 = CountUncoveredEdges(graph, path2, uniqueEdges, coveredEdges);
-                        return uncoveredEdgesCount2.CompareTo(uncoveredEdgesCount1);
-                    });
+                // order the paths based on their amount of uncovered edges, then pick the path with the max amount of uncovered edges (i.e. the first path)
+                var ordered = allPaths.Select(p => (uncovered: CountUncoveredEdges(graph, p, uniqueEdges, coveredEdges), path: p))
+                    .ToList()
+                    .OrderByDescending(p => p.uncovered);
+                var max = ordered.Max(p => p.uncovered);
+                var path = ordered.First().path;
 
-                // select the path with the maximum number of new uncovered edges
-                var path = allPaths.FirstOrDefault(p => CountUncoveredEdges(graph, p, uniqueEdges, coveredEdges) > 0);
-
-                if (path != null)
+                // if the max coverage path has edges then it should be included in our set of min paths
+                if (path.Any() && max > 0)
                 {
-                    // add the selected path to the set of selected paths
                     minimalPathSet.Add(path);
-                    // update the set of covered edges
-                    coveredEdges.UnionWith(GetEdgesFromPath(graph, path));
+                    coveredEdges.UnionWith(GetEdgesFromPath(graph, path)); // update the set of covered edges to include the new path
                 }
                 else
                 {
-                    // if there is no path that covers new edges, break the loop
+                    // otherwise there are no more paths which with provide more coverage
                     break;
                 }
             }
 
             // print the minimal paths
             file.WriteLine("\nMinimal paths covering all unique edges:");
-            PrintPathInformation(minimalPathSet, file, "Id");
+            PrintPathID(minimalPathSet, file);
             file.WriteLine("\nText for minimum paths:");
-            PrintPathInformation(minimalPathSet, file, "Text");
+            PrintPathText(minimalPathSet, file);
 
             return minimalPathSet;
         }
 
         static int CountUncoveredEdges(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<VertexShape> path, HashSet<EdgeShape> uniqueEdges, HashSet<EdgeShape> coveredEdges)
-            => GetEdgesFromPath(graph, path).Count(edge => uniqueEdges.Contains(edge) && !coveredEdges.Contains(edge));
+            => GetEdgesFromPath(graph, path)
+            .Intersect(uniqueEdges).Except(coveredEdges).Count();
+        // Count(edge => uniqueEdges.Contains(edge) && !coveredEdges.Contains(edge));
 
-        static List<EdgeShape> GetEdgesFromPath(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<VertexShape> path)
-        {
-            var edges = new List<EdgeShape>();
+        // find the edges between all pairs of consecutive vertices, then flatten the sequence and get just the unique edges to remove duplicates
+        static IEnumerable<EdgeShape> GetEdgesFromPath(DirectedMultiGraph<VertexShape, EdgeShape> graph, IEnumerable<VertexShape> path)
+            => path.Zip(path.Skip(1), graph.GetEdges).SelectMany(edges => edges).Distinct();
 
-            for (int i = 0; i < path.Count - 1; i++)
-            {
-                VertexShape source = path[i];
-                VertexShape target = path[i + 1];
 
-                // find the edge from source to target
-                edges.AddRange(graph.GetEdges(source, target).Where(edge => !edges.Contains(edge)));
-            }
-
-            return edges;
-        }
-
-        //static void PrintPageInformation(DirectedMultiGraph<VertexShape, EdgeShape> graph, StreamWriter file)
-        //{
-        //    file.WriteLine("Vertices:");
-        //    foreach (var vertex in graph.Vertices)
-        //    {
-        //        file.WriteLine($"Vertex: {vertex.Id}, InDegree: {graph.GetInDegree(vertex)}, OutDegree: {graph.GetOutDegree(vertex)}, Text: {vertex.Text}");
-        //    }
-        //    file.WriteLine("\nEdges:");
-        //    foreach (var edge in graph.Edges)
-        //    {
-        //        file.WriteLine($"Edge: {edge.Id} connects vertex {edge.FromShape} to vertex {edge.ToShape}");
-        //    }
-        //    file.WriteLine();
-        //}
-
-        static void PrintPathInformation(List<List<VertexShape>> pathSet, StreamWriter file, string property)
+        static void PrintPathID(List<List<VertexShape>> pathSet, StreamWriter file)
         {
             int count = 1;
-            switch (property)
+            foreach (var path in pathSet)
             {
-                case "Id":
-                    foreach (var path in pathSet)
-                    {
-                        file.Write($"{count}. ");
-                        foreach (var node in path)
-                        {
-                            file.Write($"{node.Id} -> ");
-                        }
-                        file.WriteLine();
-                        count++;
-                    }
-                    break;
-                case "Text":
-                    foreach (var path in pathSet)
-                    {
-                        file.Write($"{count}. ");
-                        foreach (var node in path)
-                        {
-                            file.Write($"{node.Text} -> ");
-                        }
-                        file.WriteLine();
-                        count++;
-                    }
-                    break;
-                default:
-                    Console.WriteLine($"Unrecognized property to print: {property}");
-                    break;
+                file.Write($"{count}. ");
+                foreach (var node in path)
+                {
+                    file.Write($"{node.Id} -> ");
+                }
+                file.WriteLine();
+                count++;
+            }
+            count++;
+        }
+
+        static void PrintPathText(List<List<VertexShape>> pathSet, StreamWriter file)
+        {
+            int count = 1;
+            foreach (var path in pathSet)
+            {
+                file.Write($"{count}. ");
+                foreach (var node in path)
+                {
+                    file.Write($"{node.Text} -> ");
+                }
+                file.WriteLine();
+                count++;
             }
         }
     }
