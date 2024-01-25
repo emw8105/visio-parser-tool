@@ -36,8 +36,8 @@ The current version of the Visio Parser can:
   - using much of the same logic as the off-page references but by matching the text of shapes with provided master IDs on the same page and determining which shape points to which
 - Improve permutation/minimum path algorithms for optimization (20-minute runtime on test case down to 20-second runtime 😎)
 ### WIP:
+- change filepaths to in the callflow handler work universally rather than hardcoding dev file path
 - create guidelines or a template for example usage that the tool can handle, likely whatever excel supports - WIP, updating every so often with new info
-- 
 ### Stretch Goals:
 - implement return logic
   - i.e. an off-page reference traverses to another flow which then returns to the calling location in the flow
