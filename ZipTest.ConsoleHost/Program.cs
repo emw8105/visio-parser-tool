@@ -14,6 +14,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 // Written by Evan Wright
 // TDL: see if the edge between the vertexes in the path can have it's text printed (if it has any)
+// Test the off-page reference --> start node catch on the DCW repo, figure out shorter testcase issue, then upload to Azure and redo documentation
 
 namespace VisioParse.ConsoleHost
 {
