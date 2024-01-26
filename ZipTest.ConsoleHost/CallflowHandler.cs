@@ -1,5 +1,4 @@
-﻿using ArchitectConvert.ConsoleHost;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.Linq;
@@ -8,9 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml;
+using System.Reflection;
 
 namespace VisioParse.ConsoleHost
 {
+    /// <summary>
+    /// A class that abstracts direct handling of files and directories as well as configuration options
+    /// </summary>
     public class CallflowHandler
     {
         // example files from solution:
@@ -19,33 +22,62 @@ namespace VisioParse.ConsoleHost
 
         // for basic impleplementation and testing: Basic.vsdx,
         // for a challenge: ECC IVR Call Flow V104.1_updated.vsdx, USPS ITHD IVR LiteBlue MFA Ticket 8_30_2023.vsdx, USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx
-        // for design practice differences: Inbound Routing Design v1.18.vsdx, Improved Inbound Routing Design v1.18.vsdx
+        // for design practice differences: Inbound Routing Design v1.18.vsdx, Parsable Inbound Routing Design v1.18.vsdx
         // for directory testing: CE_VCC_IVR_Callflow_V5.4.1117.vsdx
         // for a comprehensive test: Comprehensive test.vsdx
         // extra: DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
         //      (doesn't work because under the hood, the master id of the starting/ending shapes are different and indiscriminate has hundreds of thousands of paths
-        // best testcase: new DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
+        // best testcase if time permits: new DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
 
-        // set these values prior to running program depending on user's directory
-        public string Path = @"C:\Users\ewright\source\repos\ZipTest.ConsoleHost\";
-        public string FileName = "new DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx";
-        public string YamlFileName = "Select Health Routing Research_v11-0.yaml";
+        /// <summary>
+        /// The name of the visio file to parse which should be set manually
+        /// </summary>
+        public string FileName { get; set; }
 
-        // generated at runtime using constructor
-        public string ZipPath = string.Empty;
-        public string ExtractPath = string.Empty;
-        public string YamlFilePath = string.Empty;
-        public StreamWriter PageInfoFile;
-        public StreamWriter PathOutputFile;
-        public StreamWriter MinPathOutputFile;
+        /// <summary>
+        /// The base path to the solution repository
+        /// </summary>
+        public string Path { get; set; }
 
-        public Configuration Config {get; set;}
+        /// <summary>
+        /// The path to the documents folder in the repository where the desired Visio can be found and unzipped
+        /// </summary>
+        public string ZipPath { get; set; }
+
+        /// <summary>
+        /// The path to create the extracted folder containing the unzipped XML contents of the Visio
+        /// </summary>
+        public string ExtractPath { get; set; }
+
+        /// <summary>
+        /// An output file storing primarily shape info on pages
+        /// </summary>
+        public StreamWriter PageInfoFile { get; set; }
+
+        /// <summary>
+        /// An output file storing the exhaustive paths
+        /// </summary>
+        public StreamWriter PathOutputFile { get; set; }
+
+        /// <summary>
+        /// An output file storing the minimum paths
+        /// </summary>
+        public StreamWriter MinPathOutputFile { get; set; }
+
+        /// <summary>
+        /// A container for the configuration options desired by the user
+        /// </summary>
+        public Configuration Config { get; set; }
 
         public CallflowHandler()
         {
-            YamlFilePath = Path + @"Documents\" + YamlFileName;
+            // set this value prior to running program based on the desired visio
+            FileName = "Parsable Inbound Routing Design v1.18.vsdx";
+
+            Path = "";
+            Console.WriteLine(Path);
             ZipPath = Path + @"Documents\" + FileName; // path to get the zipped file i.e. the visio
-            ExtractPath = Path + "extracted"; // path to extract to within console host file
+            ExtractPath = Path + @"extracted"; // path to extract to within console host file
 
             // create output files
             string pageInfoFilePath = System.IO.Path.Combine(Path, "pageInfo_" + FileName + ".txt");
@@ -66,8 +98,15 @@ namespace VisioParse.ConsoleHost
 
             // extract the XML contents
             Console.WriteLine("extracting file to " + ExtractPath);
-            ZipFile.ExtractToDirectory(ZipPath, ExtractPath); // convert given visio file to xml components
-            Console.WriteLine("finished extraction, parsing components...");
+            try
+            {
+                ZipFile.ExtractToDirectory(ZipPath, ExtractPath); // convert given visio file to xml components
+                Console.WriteLine("finished extraction, parsing components...");
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Please make sure to close the Visio before parsing: ", ex);
+            }
         }
 
         public XDocument GetPagesXML()

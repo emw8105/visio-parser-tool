@@ -1,5 +1,4 @@
-﻿using ArchitectConvert.ConsoleHost;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,13 +23,12 @@ namespace VisioParse.ConsoleHost
         public void ConfigurationSetup()
         {
             Console.WriteLine("Please select a menu option:" +
-                //"\n1. Convert a Genesys Architect flow into Visio" +
-                "\n2. Parse Visio information with specified start and end nodes  (more precise)" + // can ask user to use text or a master ID
-                "\n3. Parse Visio information indiscriminately  (less precise)");
+                "\n1. Parse Visio information with specified start and end nodes  (more precise)" + // can ask user to use text or a master ID
+                "\n2. Parse Visio information indiscriminately  (less precise)");
             string? menuChoice = Console.ReadLine();
             switch (menuChoice)
             {
-                case "2":
+                case "1":
                     Console.WriteLine("Choose your ideal method of determining start nodes based on your Visio structure:" +
                         "\n1. Parse based on a Master ID (a specific shape used)" +
                         "\n2. Parse based on text (ex: Start)");
@@ -73,9 +71,9 @@ namespace VisioParse.ConsoleHost
             {
                 case "1":
                     NodeOption += "1";
-                    Console.WriteLine("Please enter the Master ID for the starting off-page reference shapes (i.e. 'FROM: X' nodes");
+                    Console.WriteLine("Please enter the Master ID for the starting off-page reference shapes (i.e. 'FROM: X' nodes)");
                     StartOffPageContent = Console.ReadLine();
-                    Console.WriteLine("Please enter the Master ID for the ending off-page reference shapes (i.e. 'TO: X' nodes");
+                    Console.WriteLine("Please enter the Master ID for the ending off-page reference shapes (i.e. 'TO: X' nodes)");
                     EndOffPageContent = Console.ReadLine();
                     break;
 
@@ -95,9 +93,14 @@ namespace VisioParse.ConsoleHost
                     CheckpointContent = Console.ReadLine();
                     break;
 
-                default: // Case 4 is the default (No multi-flow parsing)
+                case "4":
                     NodeOption += "4";
                     Console.WriteLine("Multi-flow parsing disabled, off-page references and checkpoints will be treated as regular vertices and paths won't continue between pages");
+                    break;
+
+                default: // Case 4 is the default (No multi-flow parsing)
+                    NodeOption += "4";
+                    Console.WriteLine("Choice not recognized, multi-flow parsing disabled, off-page references and checkpoints will be treated as regular vertices and paths won't continue between pages");
                     break;
             }
         }

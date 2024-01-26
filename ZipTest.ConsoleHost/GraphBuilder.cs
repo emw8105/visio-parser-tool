@@ -274,14 +274,8 @@ namespace VisioParse.ConsoleHost
                     break;
                 case "2":
                     // checkpoints (format of text needs to be "pageName: identifier")
-                    var checkpointStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent
-                                                                    && graph.GetInDegree(vertex) == 0
-                                                                    && graph.GetOutDegree(vertex) > 0
-                                                                    && pageNames.Any(pageName => vertex.Text.Contains($"{pageName}: ")));
-                    var checkpointEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent
-                                                                    && graph.GetOutDegree(vertex) == 0
-                                                                    && graph.GetInDegree(vertex) > 0
-                                                                    && pageNames.Any(pageName => vertex.Text.Contains($"{pageName}: ")));
+                    var checkpointStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
+                    var checkpointEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
                     CreateCheckpointEdges(checkpointStartNodes, checkpointEndNodes, graph);
 
                     break;
@@ -364,7 +358,7 @@ namespace VisioParse.ConsoleHost
                     var startNode = startNodesMap[endNodeKey];
                     var endNode = endNodesMap[endNodeKey];
 
-                    Console.WriteLine($"CREATING EDGE BETWEEN ON-PAGE REFERENCES: {endNode.Id + " (" + endNode.Text + ") "} and {startNode.Id + " (" + startNode.Text + ") "}");
+                    Console.WriteLine($"CREATING EDGE BETWEEN ON-PAGE REFERENCES: {endNode.Id + " (" + endNode.Text + ")"} and {startNode.Id + " (" + startNode.Text + ") "}");
 
                     var referenceEdge = new EdgeShape
                     {
@@ -406,34 +400,79 @@ namespace VisioParse.ConsoleHost
 
         static void CreateReferenceEdges(IEnumerable<VertexShape>? referenceStartNodes, IEnumerable<VertexShape>? referenceEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
         {
-            //Console.WriteLine("Checking for off-page references...");
-            //Console.Write("Start node off-page references: ");
-            //referenceStartNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
-            //Console.WriteLine();
-            //Console.Write("End node off-page references: ");
-            //referenceEndNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
-            //Console.WriteLine();
+            Console.WriteLine("Checking for off-page references...");
+            Console.Write("Start node off-page references: ");
+            referenceStartNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
+            Console.WriteLine();
+            Console.Write("End node off-page references: ");
+            referenceEndNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
+            Console.WriteLine();
 
             // match references together and generate an edge to link them
+
+            Dictionary<string, VertexShape> startNodesMap = new Dictionary<string, VertexShape>();
+            Dictionary<string, VertexShape> endNodesMap = new Dictionary<string, VertexShape>();
+
+            // populate the dictionaries with nodes
+            foreach (var startNode in referenceStartNodes)
+            {
+                string key = $"{startNode.PageName}_{startNode.pageReference}";
+                startNodesMap[key] = startNode;
+            }
+
             foreach (var endNode in referenceEndNodes)
             {
-                foreach (var startNode in referenceStartNodes)
+                string key = $"{endNode.pageReference}_{endNode.PageName}"; // swapped, as they should reference eachother
+                endNodesMap[key] = endNode;
+            }
+
+            // check for connections using the dictionaries
+            foreach (var endNodeKey in endNodesMap.Keys)
+            {
+                if (startNodesMap.ContainsKey(endNodeKey))
                 {
-                    //Console.WriteLine($"Trying to match {endNode.pageReference} and {startNode.PageName} && {startNode.pageReference} and {endNode.PageName}");
-                    if (endNode.pageReference == startNode.PageName && startNode.pageReference == endNode.PageName)
+                    var startNode = startNodesMap[endNodeKey];
+                    var endNode = endNodesMap[endNodeKey];
+
+                    Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: FROM {startNode.PageName} TO {endNode.PageName} (From {startNode.Id} to {endNode.Id}");
+
+                    var referenceEdge = new EdgeShape
                     {
-                        Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: {endNode.Text} and {startNode.Text}");
-                        var referenceEdge = new EdgeShape
-                        {
-                            Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
-                            Text = "Reference link",
-                            ToShape = endNode.Id,
-                            FromShape = startNode.Id
-                        };
-                        graph.Add(endNode, startNode, referenceEdge);
-                    }
+                        Id = Guid.NewGuid().ToString(),
+                        Text = "Reference link",
+                        ToShape = endNode.Id,
+                        FromShape = startNode.Id
+                    };
+
+                    graph.Add(endNode, startNode, referenceEdge);
+                }
+                else
+                {
+                    // detect unmatched connections
+                    Console.WriteLine($"No matching start node found for end node: {endNodeKey}");
+
+                    // HERE, WE CAN INSTEAD LOOK AT THE GRAPH FOR START NODES OF THAT PAGE? if there is only one, then create an edge to that start node instead
                 }
             }
+            //foreach (var endNode in referenceEndNodes)
+            //{
+            //    foreach (var startNode in referenceStartNodes)
+            //    {
+            //        //Console.WriteLine($"Trying to match {endNode.pageReference} and {startNode.PageName} && {startNode.pageReference} and {endNode.PageName}");
+            //        if (endNode.pageReference == startNode.PageName && startNode.pageReference == endNode.PageName)
+            //        {
+            //            Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: {endNode.Text} and {startNode.Text}");
+            //            var referenceEdge = new EdgeShape
+            //            {
+            //                Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
+            //                Text = "Reference link",
+            //                ToShape = endNode.Id,
+            //                FromShape = startNode.Id
+            //            };
+            //            graph.Add(endNode, startNode, referenceEdge);
+            //        }
+            //    }
+            //}
         }
     }
 }

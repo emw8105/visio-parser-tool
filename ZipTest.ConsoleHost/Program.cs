@@ -40,7 +40,6 @@ namespace VisioParse.ConsoleHost
                 var pageCount = xPages.Count();
                 var pathCountTotal = 0;
                 var minPathCountTotal = 0;
-
                 Console.WriteLine($"Total number of pages: {pageCount}");
                 callflow.PageInfoFile.WriteLine($"Total number of pages: {pageCount}");
 
@@ -89,7 +88,7 @@ namespace VisioParse.ConsoleHost
 
                     stopwatch.Stop();
                     long elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-                    Console.WriteLine($"Elapsed Time: {elapsedMilliseconds} milliseconds");
+                    Console.WriteLine($"Minimum path calculation time: {elapsedMilliseconds/1000} seconds");
 
                     var minPathCount = minPathSet.Count;
 
@@ -195,6 +194,7 @@ namespace VisioParse.ConsoleHost
         }
 
         // method for finding all of the paths between every starting vertex to every ending vertex
+        public static int i = 0;
         static List<List<VertexShape>> FindPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, VertexShape startNode, VertexShape endNode)
         {
             List<List<VertexShape>> permutationPath = new List<List<VertexShape>>();
@@ -203,7 +203,7 @@ namespace VisioParse.ConsoleHost
 
             DFS(startNode, endNode);
             return permutationPath;
-
+            
             void DFS(VertexShape currentNode, VertexShape destinationNode)
             {
                 visited.Add(currentNode);
@@ -299,7 +299,6 @@ namespace VisioParse.ConsoleHost
                 file.WriteLine();
                 count++;
             }
-            count++;
         }
 
         static void PrintPathText(List<List<VertexShape>> pathSet, StreamWriter file)

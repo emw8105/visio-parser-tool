@@ -8,7 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ArchitectConvert.ConsoleHost\ArchitectConvert.ConsoleHost.csproj" />
+    <Folder Include="Documents\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Documents\Parsable DCWater_IVR_Callflow v5.0 %28Post Go -Live Kubra Replacement%29.vsdx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Documents\Parsable Inbound Routing Design v1.18.vsdx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
