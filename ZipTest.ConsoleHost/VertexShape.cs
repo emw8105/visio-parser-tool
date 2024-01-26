@@ -51,11 +51,11 @@ namespace VisioParse.ConsoleHost
         /// <summary>
         /// The page name serving as a reference if the vertex is an off-page reference
         /// </summary>
-        public string? pageReference = string.Empty;
+        public string? PageReference = string.Empty;
 
         /// <summary>
         /// The specific vertex Id serving as a reference if the vertex is an off-page reference to a specific node
         /// </summary>
-        public string? vertexReference = string.Empty;
+        public string? VertexReference = string.Empty;
     }
 }

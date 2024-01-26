@@ -11,7 +11,7 @@ namespace VisioParse.ConsoleHost
 {
     public class GraphBuilder
     {
-        private readonly CallflowHandler Callflow;
+        private CallflowHandler Callflow { get; set; }
 
         private static readonly XNamespace ns = "http://schemas.microsoft.com/office/visio/2012/main"; // needed for queries to match elements, use for all xml parsing
 
@@ -55,7 +55,7 @@ namespace VisioParse.ConsoleHost
             return graph;
         }
 
-        static void MatchConnections(IEnumerable<XElement> connections, HashSet<string> connectionShapes, List<EdgeShape> pageEdges, IEnumerable<XElement> shapes)
+        private static void MatchConnections(IEnumerable<XElement> connections, HashSet<string> connectionShapes, List<EdgeShape> pageEdges, IEnumerable<XElement> shapes)
         {
             // create two dictionaries, load all connections into each, then match them together based on shapeID or their "FromSheet" value to create an edge
             var beginXConnections = new Dictionary<string, XElement>();
@@ -116,7 +116,7 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        static void ExtractShapeToVertex(DirectedMultiGraph<VertexShape, EdgeShape> graph, IEnumerable<XElement>? shapes, HashSet<string> connectionShapes, StreamWriter file, string pageName)
+        private static void ExtractShapeToVertex(DirectedMultiGraph<VertexShape, EdgeShape> graph, IEnumerable<XElement>? shapes, HashSet<string> connectionShapes, StreamWriter file, string pageName)
         {
             // attributes to parse from the shapes
             string id;
@@ -166,7 +166,7 @@ namespace VisioParse.ConsoleHost
                             if (hyperlinkSection != null)
                             {
                                 var subAddress = hyperlinkSection.Descendants(ns + "Row").Descendants(ns + "Cell").FirstOrDefault(cell => cell.Attribute("N")?.Value == "SubAddress")?.Attribute("V")?.Value;
-                                vertex.pageReference = subAddress;
+                                vertex.PageReference = subAddress;
                                 Console.WriteLine($"Shape {vertex.Id} has an off-page reference to: {subAddress}");
                             }
 
@@ -192,7 +192,7 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        static void AssignEdges(List<EdgeShape> pageEdges, DirectedMultiGraph<VertexShape, EdgeShape> graph)
+        private static void AssignEdges(List<EdgeShape> pageEdges, DirectedMultiGraph<VertexShape, EdgeShape> graph)
         {
             foreach (var edge in pageEdges)
             {
@@ -211,7 +211,7 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        static void WriteShapeID(XElement shape)
+        private static void WriteShapeID(XElement shape)
         {
             var shapeId = shape?.Attribute("ID")?.Value;
             var masterId = shape?.Attribute("Master")?.Value;
@@ -295,36 +295,8 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        static void CreateCheckpointEdges(IEnumerable<VertexShape>? checkpointStartNodes, IEnumerable<VertexShape>? checkpointEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
+        private void CreateCheckpointEdges(IEnumerable<VertexShape>? checkpointStartNodes, IEnumerable<VertexShape>? checkpointEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
         {
-            // at the moment, "checkpoints" are my term for off-page references which don't have a reference, but it will probably be required to put the reference for this to work
-            // as a result, this part will likely not be used, so instead this function will be used for on-page references (match the text of start and end nodes on the same page)
-            //foreach (var startNode in checkpointStartNodes)
-            //{
-            //    // organize the format into parsable sections
-            //    startNode.pageReference = startNode.Text.Split(": ")[0].Trim();
-            //    startNode.vertexReference = startNode.Text.Split(": ")[1].Trim();
-            //    foreach (var endNode in checkpointEndNodes)
-            //    {
-            //        endNode.pageReference = endNode.Text.Split(": ")[0].Trim();
-            //        endNode.vertexReference = endNode.Text.Split(": ")[1].Trim();
-
-            //        if (endNode.pageReference == startNode.PageName && startNode.pageReference == endNode.PageName && startNode.vertexReference == endNode.vertexReference)
-            //        {
-            //            Console.WriteLine($"CREATING EDGE BETWEEN CHECKPOINTS: {endNode.Id} and {startNode.Id}");
-            //            var referenceEdge = new EdgeShape
-            //            {
-            //                Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
-            //                Text = "Reference link",
-            //                ToShape = endNode.Id,
-            //                FromShape = startNode.Id
-            //            };
-            //            graph.Add(endNode, startNode, referenceEdge);
-            //        }
-            //    }
-            //}
-
-
             //Console.Write("Start node on-page references: ");
             //checkpointStartNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
             //Console.WriteLine();
@@ -376,53 +348,32 @@ namespace VisioParse.ConsoleHost
                     Console.WriteLine($"No matching start node found for end node: {endNodeKey}");
                 }
             }
-
-        //    foreach (var startNode in checkpointStartNodes)
-        //    {
-        //        foreach (var endNode in checkpointEndNodes)
-        //        {
-        //            if (endNode.PageName == startNode.PageName && startNode.Text == endNode.Text)
-        //            {
-        //                Console.WriteLine($"CREATING EDGE BETWEEN ON-PAGE REFERENCES: {endNode.Id + " (" + endNode.Text + ") "} and {startNode.Id + " (" + startNode.Text + ") "}");
-        //                var referenceEdge = new EdgeShape
-        //                {
-        //                    Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
-        //                    Text = "Reference link",
-        //                    ToShape = endNode.Id,
-        //                    FromShape = startNode.Id
-        //                };
-        //                graph.Add(endNode, startNode, referenceEdge);
-        //            }
-        //        }
-        //    }
-        //}
     }
 
-        static void CreateReferenceEdges(IEnumerable<VertexShape>? referenceStartNodes, IEnumerable<VertexShape>? referenceEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
+        private void CreateReferenceEdges(IEnumerable<VertexShape>? referenceStartNodes, IEnumerable<VertexShape>? referenceEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
         {
             Console.WriteLine("Checking for off-page references...");
-            Console.Write("Start node off-page references: ");
-            referenceStartNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
-            Console.WriteLine();
-            Console.Write("End node off-page references: ");
-            referenceEndNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
-            Console.WriteLine();
+            //Console.Write("Start node off-page references: ");
+            //referenceStartNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
+            //Console.WriteLine();
+            //Console.Write("End node off-page references: ");
+            //referenceEndNodes.ToList().ForEach(n => Console.Write(n.Text + ", "));
+            //Console.WriteLine();
 
             // match references together and generate an edge to link them
-
             Dictionary<string, VertexShape> startNodesMap = new Dictionary<string, VertexShape>();
             Dictionary<string, VertexShape> endNodesMap = new Dictionary<string, VertexShape>();
 
             // populate the dictionaries with nodes
             foreach (var startNode in referenceStartNodes)
             {
-                string key = $"{startNode.PageName}_{startNode.pageReference}";
+                string key = $"{startNode.PageName}_{startNode.PageReference}";
                 startNodesMap[key] = startNode;
             }
 
             foreach (var endNode in referenceEndNodes)
             {
-                string key = $"{endNode.pageReference}_{endNode.PageName}"; // swapped, as they should reference eachother
+                string key = $"{endNode.PageReference}_{endNode.PageName}"; // swapped, as they should reference eachother
                 endNodesMap[key] = endNode;
             }
 
@@ -451,28 +402,25 @@ namespace VisioParse.ConsoleHost
                     // detect unmatched connections
                     Console.WriteLine($"No matching start node found for end node: {endNodeKey}");
 
-                    // HERE, WE CAN INSTEAD LOOK AT THE GRAPH FOR START NODES OF THAT PAGE? if there is only one, then create an edge to that start node instead
+                    // if there are no found matching references, check if there is a singular start node on the referenced page to create an edge to
+                    var endNode = endNodesMap[endNodeKey];
+                    var startNodes = graph.Vertices.Where(vertex => vertex.PageName == endNode.PageReference && vertex.MasterId == Callflow.Config.StartNodeContent && graph.GetInDegree(vertex) > 0 && graph.GetOutDegree(vertex) == 0);
+                    if(startNodes.Count() == 1)
+                    {
+                        var startNode = startNodes.First();
+                        var referenceEdge = new EdgeShape
+                        {
+                            Id = Guid.NewGuid().ToString(),
+                            Text = "Reference link",
+                            ToShape = endNode.Id,
+                            FromShape = startNode.Id
+                        };
+
+                        graph.Add(endNode, startNode, referenceEdge);
+                        Console.WriteLine($"Reference {endNode.PageReference}: {endNodeKey}");
+                    }
                 }
             }
-            //foreach (var endNode in referenceEndNodes)
-            //{
-            //    foreach (var startNode in referenceStartNodes)
-            //    {
-            //        //Console.WriteLine($"Trying to match {endNode.pageReference} and {startNode.PageName} && {startNode.pageReference} and {endNode.PageName}");
-            //        if (endNode.pageReference == startNode.PageName && startNode.pageReference == endNode.PageName)
-            //        {
-            //            Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: {endNode.Text} and {startNode.Text}");
-            //            var referenceEdge = new EdgeShape
-            //            {
-            //                Id = Guid.NewGuid().ToString(), // generate a unique id for the added edge
-            //                Text = "Reference link",
-            //                ToShape = endNode.Id,
-            //                FromShape = startNode.Id
-            //            };
-            //            graph.Add(endNode, startNode, referenceEdge);
-            //        }
-            //    }
-            //}
         }
     }
 }
