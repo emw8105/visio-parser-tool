@@ -41,6 +41,7 @@ The current version of the Visio Parser can:
 ### Stretch Goals:
 - implement return logic
   - i.e. an off-page reference traverses to another flow which then returns to the calling location in the flow
+- to save visio development time, can implement a check for off-page references (if no receiving off-page references on the page, then create an edge to the start node of that page instead)
 - create a simple front-end implementation for the menu choices to make it more user-friendly and conducive
 - figure out how to parse .yaml files for genesys architect and see if it can be recreated in visio? - not ideal to pursue because it would generate faulty test cases from faulty arcitect flows
 
