@@ -168,6 +168,7 @@ namespace VisioParse.ConsoleHost
                                 var subAddress = hyperlinkSection.Descendants(ns + "Row").Descendants(ns + "Cell").FirstOrDefault(cell => cell.Attribute("N")?.Value == "SubAddress")?.Attribute("V")?.Value;
                                 vertex.PageReference = subAddress;
                                 Console.WriteLine($"Shape {vertex.Id} has an off-page reference to: {subAddress}");
+                                file.WriteLine($"Shape {vertex.Id} has an off-page reference to: {subAddress}");
                             }
 
                             graph.AddVertex(vertex);
@@ -385,7 +386,7 @@ namespace VisioParse.ConsoleHost
                     var startNode = startNodesMap[endNodeKey];
                     var endNode = endNodesMap[endNodeKey];
 
-                    Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: FROM {startNode.PageName} TO {endNode.PageName} (From {startNode.Id} to {endNode.Id}");
+                    Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: FROM {startNode.PageName} TO {endNode.PageName} (From {startNode.Id} to {endNode.Id})");
 
                     var referenceEdge = new EdgeShape
                     {

@@ -16,19 +16,6 @@ namespace VisioParse.ConsoleHost
     /// </summary>
     public class CallflowHandler
     {
-        // example files from solution:
-        // note that USPS flows don't have all references attached and use extra connections for start/end nodes, dont always use the same end node
-        // DCW and CE use return statements
-
-        // for basic impleplementation and testing: Basic.vsdx,
-        // for a challenge: ECC IVR Call Flow V104.1_updated.vsdx, USPS ITHD IVR LiteBlue MFA Ticket 8_30_2023.vsdx, USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx
-        // for design practice differences: Inbound Routing Design v1.18.vsdx, Parsable Inbound Routing Design v1.18.vsdx
-        // for directory testing: CE_VCC_IVR_Callflow_V5.4.1117.vsdx
-        // for a comprehensive test: Comprehensive test.vsdx
-        // extra: DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
-        //      (doesn't work because under the hood, the master id of the starting/ending shapes are different and indiscriminate has hundreds of thousands of paths
-        // best testcase if time permits: new DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
-
         /// <summary>
         /// The name of the visio file to parse which should be set manually
         /// </summary>
@@ -69,10 +56,24 @@ namespace VisioParse.ConsoleHost
         /// </summary>
         public Configuration Config { get; set; }
 
+
+        // example files from solution:
+        // note that USPS flows don't have all references attached and use extra connections for start/end nodes, dont always use the same end node
+        // DCW and CE use return statements
+
+        // for basic impleplementation and testing: Basic.vsdx,
+        // for a challenge: ECC IVR Call Flow V104.1_updated.vsdx, USPS ITHD IVR LiteBlue MFA Ticket 8_30_2023.vsdx, USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx
+        // for design practice differences: Inbound Routing Design v1.18.vsdx, Parsable Inbound Routing Design v1.18.vsdx
+        // for directory testing: CE_VCC_IVR_Callflow_V5.4.1117.vsdx
+        // for a comprehensive test: Comprehensive test.vsdx
+        // extra: DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
+        //      (doesn't work because under the hood, the master id of the starting/ending shapes are different and indiscriminate has hundreds of thousands of paths
+        // best testcase if time permits: Parsable DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
+        // best testcase on short notice: Parsable Inbound Routing Design v1.18.vsdx
         public CallflowHandler()
         {
             // set this value prior to running program based on the desired visio
-            FileName = "Parsable Inbound Routing Design v1.18.vsdx";
+            FileName = "Parsable DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx";
 
             Path = "";
             Console.WriteLine(Path);
@@ -109,6 +110,10 @@ namespace VisioParse.ConsoleHost
             }
         }
 
+        /// <summary>
+        /// Gets the "pages.XML" file which contains various information about each page such as the page count
+        /// </summary>
+        /// <returns>pages.xml as an XDocument</returns>
         public XDocument GetPagesXML()
         {
             using (XmlTextReader documentReader = new XmlTextReader(ExtractPath + @"\visio\pages\pages.xml"))
@@ -117,6 +122,11 @@ namespace VisioParse.ConsoleHost
             }
         }
 
+        /// <summary>
+        /// Gets a single page of XML
+        /// </summary>
+        /// <param name="pageNum">The page number to get</param>
+        /// <returns>The desired page as an XDocument</returns>
         public XDocument GetPageXML(int pageNum)
         {
             using (XmlTextReader reader = new XmlTextReader(ExtractPath + @"\visio\pages\page" + pageNum + ".xml"))
@@ -125,6 +135,9 @@ namespace VisioParse.ConsoleHost
             }
         }
 
+        /// <summary>
+        /// Provides the user with choices to deal with leftover files for quick deletion
+        /// </summary>
         public void ExecutionCleanup()
         {
             CleanupFiles(); // flush buffer first so that all the text is printed for inspection
@@ -168,6 +181,9 @@ namespace VisioParse.ConsoleHost
                                     Console.WriteLine("Modified Visio file must be closed before deleting. Please close the file and try again.");
                                     continue;
                                 };
+                            }
+                            else
+                            {
                                 valid = true;
                             }
                         } while (!valid);
@@ -191,6 +207,9 @@ namespace VisioParse.ConsoleHost
             } while (!valid);
         }
 
+        /// <summary>
+        /// Handles file output flushing and closing
+        /// </summary>
         public void CleanupFiles()
         {
             PageInfoFile.Flush();

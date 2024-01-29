@@ -117,5 +117,6 @@ Reference formatting:
 	- However, multiple on-page end nodes can refer to a single on-page start node and vice-versa, simply don't use the same identifier for more than one pair
 - Don't use the on-page reference shape as off-page references, the paths will not traverse through that shape.
 - Off-page references must have a matching off-page reference that points back to it
-	- As a result, ensure that an off-page reference doesn't just send you to a page that begins at a start node
+	- If there is not a matching off-page reference to receive the flow, the program will attempt to create an edge to the
+	  start node on that page instead, but if there is more than one then the edge placement is not possible to determine
 - Make sure that all off-page references have their links attached properly or else the parser can't build a multi-flow path
