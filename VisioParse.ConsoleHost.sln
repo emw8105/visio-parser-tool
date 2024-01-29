@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisioParse.ConsoleHost", "ZipTest.ConsoleHost\VisioParse.ConsoleHost.csproj", "{35F85B64-C101-4B4C-AEFD-85A951176726}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisioParse.ConsoleHost", "VisioParse.ConsoleHost\VisioParse.ConsoleHost.csproj", "{35F85B64-C101-4B4C-AEFD-85A951176726}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
