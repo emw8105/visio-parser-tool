@@ -62,14 +62,15 @@ namespace VisioParse.ConsoleHost
         // DCW and CE use return statements
 
         // for basic impleplementation and testing: Basic.vsdx,
-        // for a more comprehensive test: Comprehensive test.vsdx
+        // for a simple test: Simple Test.vsdx
 
         // best testcase if time permits: Parsable DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
         // best testcase on short notice: Parsable Inbound Routing Design v1.18.vsdx
         public CallflowHandler()
         {
             // set this value prior to running program based on the desired visio
-            FileName = "Parsable DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx";
+            FileName = "Simple Test.vsdx";
+
 
             Path = "";
             Console.WriteLine(Path);
@@ -89,25 +90,36 @@ namespace VisioParse.ConsoleHost
             File.WriteAllText(pathsFilePath, "Beginning output\n");
             MinPathOutputFile = File.AppendText(pathsFilePath);
 
-            // generate a configuration for this parsing with options selected by the user
-            Config = new Configuration();
-            Config.ConfigurationSetup();
-
-            // extract the XML contents
-            Console.WriteLine("extracting file to " + ExtractPath);
-            try
+            if (!File.Exists(ZipPath))
             {
-                // first delete any existing extract path if execution was paused halfway from a previous run
-                if (Directory.Exists(ExtractPath))
-                {
-                    Directory.Delete(ExtractPath, true);
-                }
-                ZipFile.ExtractToDirectory(ZipPath, ExtractPath); // convert given visio file to xml components
-                Console.WriteLine("finished extraction, parsing components...");
+                Console.WriteLine("First, enter a Visio file name into the FileName property in the CallflowHandler constructor within CallflowHandler.cs");
+                Console.WriteLine("The Visio must be contained within the Documents folder");
+                Console.WriteLine("Check if the entered Visio file name is correct and ensure that it is set to 'Copy if newer' in the Visual Studio properties");
+                Console.WriteLine("Press any key to exit, please try again");
+                Console.ReadLine();
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine("Please make sure to close the Visio before parsing: ", ex);
+                // generate a configuration for this parsing with options selected by the user
+                Config = new Configuration();
+                Config.ConfigurationSetup();
+
+                // extract the XML contents
+                Console.WriteLine("extracting file to " + ExtractPath);
+                try
+                {
+                    // first delete any existing extract path if execution was paused halfway from a previous run
+                    if (Directory.Exists(ExtractPath))
+                    {
+                        Directory.Delete(ExtractPath, true);
+                    }
+                    ZipFile.ExtractToDirectory(ZipPath, ExtractPath); // convert given visio file to xml components
+                    Console.WriteLine("finished extraction, parsing components...");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Please make sure to close the Visio before parsing and ensure that it has been set to 'Copy if newer' in Visual Studio: ", ex);
+                }
             }
         }
 

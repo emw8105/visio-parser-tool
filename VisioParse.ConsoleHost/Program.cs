@@ -26,93 +26,96 @@ namespace VisioParse.ConsoleHost
             // upon construction will set up the output files and configuration settings, then extract the XML files from the desired Visio
             CallflowHandler callflow = new CallflowHandler();
 
-            // use the graph builder to piece together the graph either by using the XML files or information stored in the shapes
-            GraphBuilder graphBuilder = new GraphBuilder(callflow);
-
-            // read the extracted XML contents
-            try
+            if (callflow.FileName != string.Empty)
             {
-                // first parse "pages.xml" to find page count and page names
-                XDocument pagesXml = callflow.GetPagesXML();
+                // use the graph builder to piece together the graph either by using the XML files or information stored in the shapes
+                GraphBuilder graphBuilder = new GraphBuilder(callflow);
 
-                var xPages = pagesXml.Descendants(ns + "Page");
-                var pageCount = xPages.Count();
-                var pathCountTotal = 0;
-                var minPathCountTotal = 0;
-                Console.WriteLine($"Total number of pages: {pageCount}");
-                callflow.PageInfoFile.WriteLine($"Total number of pages: {pageCount}");
-
-                Page[] pageList = new Page[pageCount];
-                var multiPageGraph = new DirectedMultiGraph<VertexShape, EdgeShape>(); // used for multi-flow parsing (off-page references)
-
-                // pages start at page1 and go up to and including the page count
-                int i = 1;
-                foreach (var page in xPages)
+                // read the extracted XML contents
+                try
                 {
-                    var pageName = page?.Attribute("Name")?.Value;
-                    Console.WriteLine($"Parsing page {i}: {pageName}");
-                    callflow.PageInfoFile.WriteLine($"\n----Page {i}: {pageName}----");
+                    // first parse "pages.xml" to find page count and page names
+                    XDocument pagesXml = callflow.GetPagesXML();
 
-                    XDocument xmlDoc = callflow.GetPageXML(i); // used for current xml being parsed
+                    var xPages = pagesXml.Descendants(ns + "Page");
+                    var pageCount = xPages.Count();
+                    var pathCountTotal = 0;
+                    var minPathCountTotal = 0;
+                    Console.WriteLine($"Total number of pages: {pageCount}");
+                    callflow.PageInfoFile.WriteLine($"Total number of pages: {pageCount}");
 
-                    var graph = graphBuilder.BuildGraph(xmlDoc, i, pageName);
-                    graphBuilder.MergePageGraph(graph, multiPageGraph); // combine all pages into one graph to parse between off-page references
+                    Page[] pageList = new Page[pageCount];
+                    var multiPageGraph = new DirectedMultiGraph<VertexShape, EdgeShape>(); // used for multi-flow parsing (off-page references)
 
-                    pageList[i - 1] = BuildPage(graph, page, i);
+                    // pages start at page1 and go up to and including the page count
+                    int i = 1;
+                    foreach (var page in xPages)
+                    {
+                        var pageName = page?.Attribute("Name")?.Value;
+                        Console.WriteLine($"Parsing page {i}: {pageName}");
+                        callflow.PageInfoFile.WriteLine($"\n----Page {i}: {pageName}----");
 
-                    // print out the graph data parsed from the page
-                    callflow.PageInfoFile.WriteLine($"Page {i} has {graph.Vertices.Count} vertices and {graph.NumberOfEdges} edges");
-                    //callflow.PageInfoFile.WriteLine($"\nGraph notation of page {i}:");
-                    //PrintPageInformation(graph, callflow.PageInfoFile);
+                        XDocument xmlDoc = callflow.GetPageXML(i); // used for current xml being parsed
 
-                    i++;
+                        var graph = graphBuilder.BuildGraph(xmlDoc, i, pageName);
+                        graphBuilder.MergePageGraph(graph, multiPageGraph); // combine all pages into one graph to parse between off-page references
+
+                        pageList[i - 1] = BuildPage(graph, page, i);
+
+                        // print out the graph data parsed from the page
+                        callflow.PageInfoFile.WriteLine($"Page {i} has {graph.Vertices.Count} vertices and {graph.NumberOfEdges} edges");
+                        //callflow.PageInfoFile.WriteLine($"\nGraph notation of page {i}:");
+                        //PrintPageInformation(graph, callflow.PageInfoFile);
+
+                        i++;
+                    }
+
+                    // once all of the pages have added their graphs together, connect each of their reference shapes together to join desired page flows
+                    graphBuilder.ConnectReferenceShapes(multiPageGraph, pageList);
+
+                    Console.WriteLine("Generating permutations...");
+                    var pathSet = GetAllPermutations(multiPageGraph, callflow.PathOutputFile, callflow.Config, pageList, i);
+                    var pathCount = pathSet.Count;
+
+                    // find the minimum paths for test cases
+                    if (pathCount > 0)
+                    {
+                        Console.WriteLine("Calculating minimum paths...");
+
+                        Stopwatch stopwatch = new Stopwatch();
+                        stopwatch.Start();
+
+                        var minPathSet = GetMinimumPaths(multiPageGraph, pathSet, callflow.MinPathOutputFile);
+
+                        stopwatch.Stop();
+                        long elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+                        Console.WriteLine($"Minimum path calculation time: {elapsedMilliseconds / 1000} seconds");
+
+                        var minPathCount = minPathSet.Count;
+
+                        callflow.MinPathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
+                        callflow.PageInfoFile.WriteLine($"Number of paths to test: {pathCount}\n");
+                        pathCountTotal += pathCount;
+                        minPathCountTotal += minPathCount;
+
+                        Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
+                        Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
+                        callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
+                        callflow.PathOutputFile.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No paths found, please ensure the inputted configuration matches the actual IDs of the Visio");
+                    }
+
+                    callflow.ExecutionCleanup();
                 }
-
-                // once all of the pages have added their graphs together, connect each of their reference shapes together to join desired page flows
-                graphBuilder.ConnectReferenceShapes(multiPageGraph, pageList);
-
-                Console.WriteLine("Generating permutations...");
-                var pathSet = GetAllPermutations(multiPageGraph, callflow.PathOutputFile, callflow.Config, pageList, i);
-                var pathCount = pathSet.Count;
-
-                // find the minimum paths for test cases
-                if (pathCount > 0)
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Calculating minimum paths...");
+                    Console.WriteLine($"An error occurred: {ex.Message}");
 
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-
-                    var minPathSet = GetMinimumPaths(multiPageGraph, pathSet, callflow.MinPathOutputFile);
-
-                    stopwatch.Stop();
-                    long elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-                    Console.WriteLine($"Minimum path calculation time: {elapsedMilliseconds / 1000} seconds");
-
-                    var minPathCount = minPathSet.Count;
-
-                    callflow.MinPathOutputFile.WriteLine($"Minimum number of paths on Page {i} to cover all cases: {minPathCount}");
-                    callflow.PageInfoFile.WriteLine($"Number of paths to test: {pathCount}\n");
-                    pathCountTotal += pathCount;
-                    minPathCountTotal += minPathCount;
-
-                    Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
-                    Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
-                    callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
-                    callflow.PathOutputFile.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
+                    callflow.CleanupFiles();
                 }
-                else
-                {
-                    Console.WriteLine("No paths found, please ensure the inputted configuration matches the actual IDs of the Visio");
-                }
-
-                callflow.ExecutionCleanup();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-
-                callflow.CleanupFiles();
             }
         }
 
