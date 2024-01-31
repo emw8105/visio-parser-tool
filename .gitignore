@@ -364,14 +364,7 @@ FodyWeavers.xsd
 
 
 
-# Ignore Visio files
-*.vsd
-*.vsdx
-*.vss
-*.vssx
-*.vst
-*.vstx
-*.vsw
+
 
 # Ignore parsed files
 paths_*.txt
@@ -380,3 +373,5 @@ minPaths_*.txt
 
 # Ignore extracted files
 extracted/
+/VisioParse.ConsoleHost/Documents/Parsable DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
+/VisioParse.ConsoleHost/Documents/Parsable Inbound Routing Design v1.18.vsdx
