@@ -9,8 +9,6 @@ namespace VisioParse.ConsoleHost
     public class Configuration
     {
         // generated at runtime from user input to serve as configuration options
-        // in the future, most of these can be made into a general template (i.e. use Master ID 4 for start/end nodes, etc.)
-
         public string? NodeOption = string.Empty; // 2 digits representing config options, first is for start/end nodes, second is for multi-flow parsing
         // basic config for start/end nodes
         public string? StartNodeContent = string.Empty; // either text or Master ID representing the value to use when considering start nodes
@@ -71,10 +69,7 @@ namespace VisioParse.ConsoleHost
             {
                 case "1":
                     NodeOption += "1";
-                    Console.WriteLine("Please enter the Master ID for the starting off-page reference shapes (i.e. 'FROM: X' nodes)");
-                    StartOffPageContent = Console.ReadLine();
-                    Console.WriteLine("Please enter the Master ID for the ending off-page reference shapes (i.e. 'TO: X' nodes)");
-                    EndOffPageContent = Console.ReadLine();
+                    Console.WriteLine("Currently, the Master ID does not need to be used to determine off-page references as long as the references are attached");
                     break;
 
                 case "2":
@@ -85,10 +80,7 @@ namespace VisioParse.ConsoleHost
 
                 case "3":
                     NodeOption += "3";
-                    Console.WriteLine("Please enter the Master ID for the starting off-page reference shapes (i.e. 'FROM: X' nodes)");
-                    StartOffPageContent = Console.ReadLine();
-                    Console.WriteLine("Please enter the Master ID for the ending off-page reference shapes (i.e. 'TO: X' nodes)");
-                    EndOffPageContent = Console.ReadLine();
+                    Console.WriteLine("Currently, the Master ID does not need to be used to determine off-page references as long as the references are attached");
                     Console.WriteLine("Please enter the Master ID for the on-page reference shapes");
                     CheckpointContent = Console.ReadLine();
                     break;

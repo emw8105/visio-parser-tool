@@ -39,7 +39,7 @@ namespace VisioParse.ConsoleHost
         public required XElement XMaster { get; init; }
 
         /// <summary>
-        /// 
+        /// The name of the page that this vertex is contained in
         /// </summary>
         public required string PageName = string.Empty;
 
@@ -49,13 +49,8 @@ namespace VisioParse.ConsoleHost
         public required string MasterId { get; init; }
 
         /// <summary>
-        /// The page name serving as a reference if the vertex is an off-page reference
+        /// If the vertex is an off-page reference, this property stores the destination page name
         /// </summary>
         public string? PageReference = string.Empty;
-
-        /// <summary>
-        /// The specific vertex Id serving as a reference if the vertex is an off-page reference to a specific node
-        /// </summary>
-        public string? VertexReference = string.Empty;
     }
 }

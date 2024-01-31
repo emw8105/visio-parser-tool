@@ -257,8 +257,6 @@ namespace VisioParse.ConsoleHost
         public void ConnectReferenceShapes(DirectedMultiGraph<VertexShape, EdgeShape> graph, Page[] pageList)
         {
             var nodeOption = Callflow.Config.NodeOption;
-            var startOffPageContent = Callflow.Config.StartOffPageContent;
-            var endOffPageContent = Callflow.Config.EndOffPageContent;
             var checkpointContent = Callflow.Config.CheckpointContent;
 
             // Note: for references, end nodes should point to start nodes to join the pages together
@@ -267,8 +265,8 @@ namespace VisioParse.ConsoleHost
             {
                 case "1":
                     // off-page references
-                    var referenceStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == startOffPageContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
-                    var referenceEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == endOffPageContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
+                    var referenceStartNodes = graph.Vertices.Where(vertex => !vertex.PageReference.Equals("") && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
+                    var referenceEndNodes = graph.Vertices.Where(vertex => !vertex.PageReference.Equals("") && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
 
                     // match references together and generate an edge to link them
                     CreateReferenceEdges(referenceStartNodes, referenceEndNodes, graph);
@@ -282,8 +280,8 @@ namespace VisioParse.ConsoleHost
                     break;
                 case "3":
                     // both
-                    referenceStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == startOffPageContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
-                    referenceEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == endOffPageContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
+                    referenceStartNodes = graph.Vertices.Where(vertex => !vertex.PageReference.Equals("") && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
+                    referenceEndNodes = graph.Vertices.Where(vertex => !vertex.PageReference.Equals("") && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
                     checkpointStartNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent && graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0);
                     checkpointEndNodes = graph.Vertices.Where(vertex => vertex.MasterId == checkpointContent && graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0);
 
@@ -308,7 +306,6 @@ namespace VisioParse.ConsoleHost
             // on-page reference connecting
             Console.WriteLine("Checking for on-page references...");
             Dictionary<string, VertexShape> startNodesMap = new Dictionary<string, VertexShape>();
-            Dictionary<string, VertexShape> endNodesMap = new Dictionary<string, VertexShape>();
 
             // populate the dictionaries with nodes
             foreach (var startNode in checkpointStartNodes)
@@ -317,19 +314,13 @@ namespace VisioParse.ConsoleHost
                 startNodesMap[key] = startNode;
             }
 
+            // check for connections using the dictionaries
             foreach (var endNode in checkpointEndNodes)
             {
-                string key = $"{endNode.PageName}_{endNode.Text}";
-                endNodesMap[key] = endNode;
-            }
-
-            // check for connections using the dictionaries
-            foreach (var endNodeKey in endNodesMap.Keys)
-            {
+                var endNodeKey = $"{endNode.PageName}_{endNode.Text}";
                 if (startNodesMap.ContainsKey(endNodeKey))
                 {
                     var startNode = startNodesMap[endNodeKey];
-                    var endNode = endNodesMap[endNodeKey];
 
                     Console.WriteLine($"CREATING EDGE BETWEEN ON-PAGE REFERENCES: {endNode.Id + " (" + endNode.Text + ")"} and {startNode.Id + " (" + startNode.Text + ") "}");
 
@@ -349,7 +340,7 @@ namespace VisioParse.ConsoleHost
                     Console.WriteLine($"No matching start node found for end node: {endNodeKey}");
                 }
             }
-    }
+        }
 
         private void CreateReferenceEdges(IEnumerable<VertexShape>? referenceStartNodes, IEnumerable<VertexShape>? referenceEndNodes, DirectedMultiGraph<VertexShape, EdgeShape> graph)
         {
@@ -363,7 +354,6 @@ namespace VisioParse.ConsoleHost
 
             // match references together and generate an edge to link them
             Dictionary<string, VertexShape> startNodesMap = new Dictionary<string, VertexShape>();
-            Dictionary<string, VertexShape> endNodesMap = new Dictionary<string, VertexShape>();
 
             // populate the dictionaries with nodes
             foreach (var startNode in referenceStartNodes)
@@ -374,17 +364,10 @@ namespace VisioParse.ConsoleHost
 
             foreach (var endNode in referenceEndNodes)
             {
-                string key = $"{endNode.PageReference}_{endNode.PageName}"; // swapped, as they should reference eachother
-                endNodesMap[key] = endNode;
-            }
-
-            // check for connections using the dictionaries
-            foreach (var endNodeKey in endNodesMap.Keys)
-            {
+                var endNodeKey = $"{endNode.PageReference}_{endNode.PageName}";
                 if (startNodesMap.ContainsKey(endNodeKey))
                 {
                     var startNode = startNodesMap[endNodeKey];
-                    var endNode = endNodesMap[endNodeKey];
 
                     Console.WriteLine($"CREATING EDGE BETWEEN OFF-PAGE REFERENCES: FROM {startNode.PageName} TO {endNode.PageName} (From {startNode.Id} to {endNode.Id})");
 
@@ -404,9 +387,8 @@ namespace VisioParse.ConsoleHost
                     Console.WriteLine($"No matching start node found for end node: {endNodeKey}");
 
                     // if there are no found matching references, check if there is a singular start node on the referenced page to create an edge to
-                    var endNode = endNodesMap[endNodeKey];
                     var startNodes = graph.Vertices.Where(vertex => vertex.PageName == endNode.PageReference && vertex.MasterId == Callflow.Config.StartNodeContent && graph.GetInDegree(vertex) > 0 && graph.GetOutDegree(vertex) == 0);
-                    if(startNodes.Count() == 1)
+                    if (startNodes.Count() == 1)
                     {
                         var startNode = startNodes.First();
                         var referenceEdge = new EdgeShape

@@ -62,12 +62,8 @@ namespace VisioParse.ConsoleHost
         // DCW and CE use return statements
 
         // for basic impleplementation and testing: Basic.vsdx,
-        // for a challenge: ECC IVR Call Flow V104.1_updated.vsdx, USPS ITHD IVR LiteBlue MFA Ticket 8_30_2023.vsdx, USPS_GCX_NMCSC_IVRCallFlow_006 (1).vsdx
-        // for design practice differences: Inbound Routing Design v1.18.vsdx, Parsable Inbound Routing Design v1.18.vsdx
-        // for directory testing: CE_VCC_IVR_Callflow_V5.4.1117.vsdx
-        // for a comprehensive test: Comprehensive test.vsdx
-        // extra: DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
-        //      (doesn't work because under the hood, the master id of the starting/ending shapes are different and indiscriminate has hundreds of thousands of paths
+        // for a more comprehensive test: Comprehensive test.vsdx
+
         // best testcase if time permits: Parsable DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
         // best testcase on short notice: Parsable Inbound Routing Design v1.18.vsdx
         public CallflowHandler()
@@ -101,10 +97,15 @@ namespace VisioParse.ConsoleHost
             Console.WriteLine("extracting file to " + ExtractPath);
             try
             {
+                // first delete any existing extract path if execution was paused halfway from a previous run
+                if (Directory.Exists(ExtractPath))
+                {
+                    Directory.Delete(ExtractPath, true);
+                }
                 ZipFile.ExtractToDirectory(ZipPath, ExtractPath); // convert given visio file to xml components
                 Console.WriteLine("finished extraction, parsing components...");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine("Please make sure to close the Visio before parsing: ", ex);
             }

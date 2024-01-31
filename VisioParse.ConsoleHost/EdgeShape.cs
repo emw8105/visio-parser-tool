@@ -32,5 +32,4 @@ namespace VisioParse.ConsoleHost
         /// </summary>
         public required string FromShape { get; init; }
     }
-
 }

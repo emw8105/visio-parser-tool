@@ -12,9 +12,7 @@ using System.IO.Compression;
 using System.Drawing;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-// Written by Evan Wright
-// TDL: see if the edge between the vertexes in the path can have it's text printed (if it has any)
-// Test the off-page reference --> start node catch on the DCW repo, figure out shorter testcase issue, then upload to Azure and redo documentation
+// take master id out of off-page references, fix reference algorithm by removing parallel hashmap, update readme, update documentation
 
 namespace VisioParse.ConsoleHost
 {
@@ -89,7 +87,7 @@ namespace VisioParse.ConsoleHost
 
                     stopwatch.Stop();
                     long elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-                    Console.WriteLine($"Minimum path calculation time: {elapsedMilliseconds/1000} seconds");
+                    Console.WriteLine($"Minimum path calculation time: {elapsedMilliseconds / 1000} seconds");
 
                     var minPathCount = minPathSet.Count;
 
@@ -97,12 +95,16 @@ namespace VisioParse.ConsoleHost
                     callflow.PageInfoFile.WriteLine($"Number of paths to test: {pathCount}\n");
                     pathCountTotal += pathCount;
                     minPathCountTotal += minPathCount;
-                }
 
-                Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
-                Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
-                callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
-                callflow.PathOutputFile.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
+                    Console.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
+                    Console.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
+                    callflow.PathOutputFile.WriteLine($"\nTotal number of paths to test to cover every page: {pathCountTotal}");
+                    callflow.PathOutputFile.WriteLine($"Total minimum number of paths to test: {minPathCountTotal}");
+                }
+                else
+                {
+                    Console.WriteLine("No paths found, please ensure the inputted configuration matches the actual IDs of the Visio");
+                }
 
                 callflow.ExecutionCleanup();
             }
@@ -167,7 +169,6 @@ namespace VisioParse.ConsoleHost
 
             // list containing the paths containing each node
             var allPaths = new List<List<VertexShape>>();
-
             int numPaths = 0;
 
             // find every path from every start node to every end node
@@ -204,7 +205,7 @@ namespace VisioParse.ConsoleHost
 
             DFS(startNode, endNode);
             return permutationPath;
-            
+
             void DFS(VertexShape currentNode, VertexShape destinationNode)
             {
                 visited.Add(currentNode);
@@ -233,7 +234,7 @@ namespace VisioParse.ConsoleHost
             }
         }
 
-        // this algorithm takes up 95% of runtime and was possibly 50% of the total brainpower
+        // find the minimum number of paths needed to cover every edge by picking the path that covers the most amount of uncovered edges at every iteration until all edges covered
         static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
         {
             // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
