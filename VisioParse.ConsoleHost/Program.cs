@@ -115,6 +115,7 @@ namespace VisioParse.ConsoleHost
                     Console.WriteLine($"An error occurred: {ex.Message}");
 
                     callflow.CleanupFiles();
+                    Console.ReadLine(); // added for inspection of error
                 }
             }
         }

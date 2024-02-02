@@ -71,7 +71,7 @@ namespace VisioParse.ConsoleHost
             // set this value prior to running program based on the desired visio
             FileName = "Simple Test.vsdx";
 
-
+            Console.WriteLine($"Currently parsing: {FileName}");
             Path = "";
             Console.WriteLine(Path);
             ZipPath = Path + @"Documents\" + FileName; // path to get the zipped file i.e. the visio
@@ -119,6 +119,7 @@ namespace VisioParse.ConsoleHost
                 catch (Exception ex)
                 {
                     Console.WriteLine("Please make sure to close the Visio before parsing and ensure that it has been set to 'Copy if newer' in Visual Studio: ", ex);
+                    Console.ReadLine(); // put here for inspection
                 }
             }
         }
