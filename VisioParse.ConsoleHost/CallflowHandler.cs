@@ -170,7 +170,7 @@ namespace VisioParse.ConsoleHost
                     // rezip the extracted files into a Visio, allow the user to delete again
                     case "1":
 
-                        string newZipPath = Path + @"\Modified" + FileName + ".zip";
+                        string newZipPath = Path + @"Modified" + FileName + ".zip";
                         ZipFile.CreateFromDirectory(ExtractPath, newZipPath);
 
                         string newVisioPath = System.IO.Path.ChangeExtension(newZipPath, ".vsdx");

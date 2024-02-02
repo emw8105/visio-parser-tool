@@ -37,18 +37,28 @@ The current version of the Visio Parser can:
 - Improve permutation/minimum path algorithms for optimization (20-minute runtime on test case down to 20-second runtime 😎)
 - Change filepaths to in the callflow handler work universally rather than hardcoding dev file path
 - To save visio development time, implement a check for off-page references (if no receiving off-page references on the page, then create an edge to the start node of that page instead)
-### WIP:
-- create guidelines or a template for example usage that the tool can handle, likely whatever excel supports - WIP, updating every so often with new info
-### Stretch Goals:
-- implement return logic
-  - i.e. an off-page reference traverses to another flow which then returns to the calling location in the flow
-- create a simple front-end implementation for the menu choices to make it more user-friendly and conducive
-- figure out how to parse .yaml files for genesys architect and see if it can be recreated in visio? - not ideal to pursue because it would generate faulty test cases from faulty arcitect flows
-
 ## Installation
 1. Download Visual Studio if it is not currently installed
 2. Clone the repository to download the contents to your local machine
 3. Open up the downloaded repo and double click on the .sln file to open up the solution in Visual Studio
+
+## Getting Started
+Currently, usage of the parser is somewhat convoluted without a dedicated interface for the various different configurations. In order to parse the Visio accurately, the parser needs some additional information provided by the user, or else it wouldn't be able to tell which nodes are start nodes and which nodes are references. To assist with that, the user can enter in some information such as different IDs for various shapes in the Visio. To get started, follow these steps:
+1. Follow the instructions in the Installation portion
+2. Navigate to the Documents folder within the repository directory (VisioParse.ConsoleHost\VisioParse.ConsoleHost\Documents), copy the desired Visio into this file
+3. Open up the solution by clicking on the .sln file
+4. Navigate to the Solution Explorer tab on the left, click the dropdown on the Documents folder to see the Visio inputted previously
+5. Right click on the Visio, click Properties, then select Copy if newer
+6. Open up CallflowHandler.cs
+7. Scroll down to the CallflowHandler constructor, in the line where the FileName is set to a string, change it to be the name of the Visio file (including the .vsdx)
+8. Run the program
+9. If knowledge of various IDs are not already known, parse indiscriminately
+10. Output files can be found at VisioParse.ConsoleHost\VisioParse.ConsoleHost\bin\Debug\net7.0, check the contents of pageInfo_filename to see the Master IDs of various shapes
+11. For an easier inspection, choose to rezip the files back into a Visio, then open up the Visio from the same bin directory as the other output files and check the Master IDs
+12. Take note of the starting shape Master IDs, ending shape Master IDs, and on-page reference Master IDS
+13. When ready, rerun the program and instead choose to parse with specification
+14. Follow the menu prompts and enter corresponding IDs when prompted
+15. Once the parser finishes execution, inspect the output files (especially the minPaths_filename file) to analyze the outputs
 
 There are additional instructions for installation/execution/usage in the documentation included
 
