@@ -18,6 +18,31 @@ The current version of the Visio Parser can:
 - Determines the optimal minimum paths needed to cover all edges / cases to simplify QA testing
 
 ## TDL
+### WIP:
+- prevent infinite loops from cyclical off-page references, find some way to direct permutations to avoid the same sequence of operations from happening in a cycle, could take advantage of page property to avoid checking every previously created path
+  - could also possibly check if the current node has already been included if it is an off-page reference, if so then backtrack instead of taking the reference, investigate solutions that dont jeapordize possible viable paths
+- enable function return detection, i.e traversing to an off-page reference, then popping back to the previous page when encountering a node that has some kind of identifier for "return to calling function"
+- streamline the process for retrieving IDs, parse the Visio information and make it available before determining node ids and stuff
+	- also, possibly have it displayed in the console, i.e. look for a page titled "Legend" and print the ids of all the components on that page
+	- add a console detection for potentially missed start and end nodes, i.e. for the query that searches for master id, check if any not in that category have text that matches "Start" or "End" or "Disconnect", etc. and print those
+- investigate possible improved loading requirements, maybe determine how many documents are in a folder, if it's only one then do that, else ask for the title idk
+- use a better design such as this pseudocode to allow file prints to be added while parsing so it's not an all-or-nothing solution (better debugging)
+
+public static IEnumerable<Vertex> YieldingMethod()
+{
+  foreach(outer in outers)
+    foreach(inner in inners)
+    {
+      foreach(vertex in ThingThatReturnsVertices())
+        yield return vertex;
+    }
+}
+
+foreach(var vertex in YieldingMethod())
+  AppendToFile(vertex);
+
+- memory requirements might need some scrutiny but judge this after infinite loops have been solved
+- rewrite readme to include these components once finished (initialization) and incorporate usage documentation
 ### Done:
 - Track number of paths per page to calculate number of test cases to write
 - Don't add any vertex with no incoming or outgoing edges to reduce clutter
