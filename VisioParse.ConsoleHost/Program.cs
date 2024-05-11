@@ -180,18 +180,21 @@ namespace VisioParse.ConsoleHost
             {
                 foreach (var endNode in endNodes)
                 {
-                    var permutations = FindPermutations(graph, startNode, endNode);
-                    allPaths.AddRange(permutations);
-                    numPaths += permutations.Count;
+                    foreach (var path in FindPermutations(graph, startNode, endNode))
+                    {
+                        allPaths.Add(path);
+                        numPaths++;
+                        PrintPathID(path, file, numPaths);
+                    }
                 }
             }
 
-            if (allPaths.Count > 0)
-            {
-                file.WriteLine("Paths:");
-                PrintPathID(allPaths, file);
-            }
-            else
+            // if (allPaths.Count > 0)
+            // {
+            //     file.WriteLine("Paths:");
+            //     PrintAllPathID(allPaths, file);
+            // }
+            if(allPaths.Count == 0)
             {
                 file.WriteLine($"No test cases to be generated for this page");
             }
@@ -201,16 +204,17 @@ namespace VisioParse.ConsoleHost
 
         // method for finding all of the paths between every starting vertex to every ending vertex
         public static int i = 0;
-        static List<List<VertexShape>> FindPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, VertexShape startNode, VertexShape endNode)
+        static IEnumerable<List<VertexShape>> FindPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, VertexShape startNode, VertexShape endNode)
         {
-            List<List<VertexShape>> permutationPath = new List<List<VertexShape>>();
             HashSet<VertexShape> visited = new HashSet<VertexShape>();
             List<VertexShape> currentPath = new List<VertexShape>();
 
-            DFS(startNode, endNode);
-            return permutationPath;
+            foreach (var path in DFS(startNode, endNode))
+            {
+                yield return path;
+            }
 
-            void DFS(VertexShape currentNode, VertexShape destinationNode)
+            IEnumerable<List<VertexShape>> DFS(VertexShape currentNode, VertexShape destinationNode)
             {
                 visited.Add(currentNode);
                 currentPath.Add(currentNode);
@@ -218,7 +222,7 @@ namespace VisioParse.ConsoleHost
                 if (currentNode == destinationNode)
                 {
                     // reached the destination, record the current path
-                    permutationPath.Add(new List<VertexShape>(currentPath));
+                    yield return new List<VertexShape>(currentPath);
                 }
                 else
                 {
@@ -227,7 +231,10 @@ namespace VisioParse.ConsoleHost
                         if (!visited.Contains(neighbor))
                         {
                             // recursively explore the neighbor nodes
-                            DFS(neighbor, destinationNode);
+                            foreach (var path in DFS(neighbor, destinationNode))
+                            {
+                                yield return path;
+                            }
                         }
                     }
                 }
@@ -275,9 +282,9 @@ namespace VisioParse.ConsoleHost
 
             // print the minimal paths
             file.WriteLine("\nMinimal paths covering all unique edges:");
-            PrintPathID(minimalPathSet, file);
+            PrintAllPathID(minimalPathSet, file);
             file.WriteLine("\nText for minimum paths:");
-            PrintPathText(minimalPathSet, file);
+            PrintAllPathText(minimalPathSet, file);
 
             return minimalPathSet;
         }
@@ -292,32 +299,45 @@ namespace VisioParse.ConsoleHost
             => path.Zip(path.Skip(1), graph.GetEdges).SelectMany(edges => edges).Distinct();
 
 
-        static void PrintPathID(List<List<VertexShape>> pathSet, StreamWriter file)
+        // wrapper function to print every path by calling the individual path print function
+        static void PrintPathID(List<VertexShape> path, StreamWriter file, int pathNumber)
+        {
+            file.Write($"{pathNumber}. ");
+            foreach (var node in path)
+            {
+                file.Write($"{node.Id} -> ");
+            }
+            file.WriteLine();
+            file.Flush();
+        }
+
+        static void PrintAllPathID(List<List<VertexShape>> pathSet, StreamWriter file)
         {
             int count = 1;
             foreach (var path in pathSet)
             {
-                file.Write($"{count}. ");
-                foreach (var node in path)
-                {
-                    file.Write($"{node.Id} -> ");
-                }
-                file.WriteLine();
+                PrintPathID(path, file, count);
                 count++;
             }
         }
 
-        static void PrintPathText(List<List<VertexShape>> pathSet, StreamWriter file)
+
+        static void PrintPathText(List<VertexShape> path, StreamWriter file, int pathNumber)
+        {
+            file.Write($"{pathNumber}. ");
+            foreach (var node in path)
+            {
+                file.Write($"{node.Text} -> ");
+            }
+            file.WriteLine();
+        }
+
+        static void PrintAllPathText(List<List<VertexShape>> pathSet, StreamWriter file)
         {
             int count = 1;
             foreach (var path in pathSet)
             {
-                file.Write($"{count}. ");
-                foreach (var node in path)
-                {
-                    file.Write($"{node.Text} -> ");
-                }
-                file.WriteLine();
+                PrintPathText(path, file, count);
                 count++;
             }
         }
