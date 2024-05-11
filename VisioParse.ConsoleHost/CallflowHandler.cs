@@ -69,29 +69,67 @@ namespace VisioParse.ConsoleHost
         public CallflowHandler()
         {
             // set this value prior to running program based on the desired visio
-            FileName = "Simple Test.vsdx";
+            //FileName = "Simple Test.vsdx";
+
+            // get all .vsdx files in the Documents directory and print them out for the user to choose from
+            var files = Directory.GetFiles("Documents", "*.vsdx");
+
+            // if there's only one file then automatically select it
+            if (files.Length == 1)
+            {
+                FileName = System.IO.Path.GetFileName(files[0]);
+                Console.WriteLine($"Only one Visio file found: {FileName}. Automatically selected.");
+            }
+            else // else ask the user to select a file
+            {
+                // print the files for the user
+                for (int i = 0; i < files.Length; i++)
+                {
+                    Console.WriteLine($"{i + 1}. {System.IO.Path.GetFileName(files[i])}");
+                }
+
+                // ask the user to select a file
+                int index;
+                do
+                {
+                    Console.Write("Enter the number of the Visio file you want to parse: ");
+                    var input = Console.ReadLine();
+                    if (int.TryParse(input, out index) && index > 0 && index <= files.Length)
+                    {
+                        FileName = System.IO.Path.GetFileName(files[index - 1]);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid selection. Please try again.");
+                        index = 0; // reset index to an invalid value
+                    }
+                } while (index <= 0 || index > files.Length);
+            }
 
             Console.WriteLine($"Currently parsing: {FileName}");
+            var fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(FileName);
+            Console.WriteLine("Current directory: " + System.IO.Directory.GetCurrentDirectory());
             Path = "";
             Console.WriteLine(Path);
             ZipPath = Path + @"Documents\" + FileName; // path to get the zipped file i.e. the visio
             ExtractPath = Path + @"extracted"; // path to extract to within console host file
 
             // create output files
-            string pageInfoFilePath = System.IO.Path.Combine(Path, "pageInfo_" + FileName + ".txt");
+            string pageInfoFilePath = System.IO.Path.Combine(Path, "pageInfo_" + fileNameWithoutExtension + ".txt");
             File.WriteAllText(pageInfoFilePath, "Beginning output\n");
             PageInfoFile = File.AppendText(pageInfoFilePath);
 
-            string pathsFilePath = System.IO.Path.Combine(Path, "paths_" + FileName + ".txt");
+            string pathsFilePath = System.IO.Path.Combine(Path, "paths_" + fileNameWithoutExtension + ".txt");
             File.WriteAllText(pathsFilePath, "Beginning output\n");
             PathOutputFile = File.AppendText(pathsFilePath);
 
-            pathsFilePath = System.IO.Path.Combine(Path, "minPaths_" + FileName + ".txt");
+            pathsFilePath = System.IO.Path.Combine(Path, "minPaths_" + fileNameWithoutExtension + ".txt");
             File.WriteAllText(pathsFilePath, "Beginning output\n");
             MinPathOutputFile = File.AppendText(pathsFilePath);
 
             if (!File.Exists(ZipPath))
             {
+                Console.WriteLine($"The Visio file was not found in the Documents folder: {FileName}");
                 Console.WriteLine("First, enter a Visio file name into the FileName property in the CallflowHandler constructor within CallflowHandler.cs");
                 Console.WriteLine("The Visio must be contained within the Documents folder");
                 Console.WriteLine("Check if the entered Visio file name is correct and ensure that it is set to 'Copy if newer' in the Visual Studio properties");

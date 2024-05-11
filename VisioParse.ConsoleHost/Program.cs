@@ -207,7 +207,8 @@ namespace VisioParse.ConsoleHost
         static IEnumerable<List<VertexShape>> FindPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, VertexShape startNode, VertexShape endNode)
         {
             HashSet<VertexShape> visited = new HashSet<VertexShape>();
-            List<VertexShape> currentPath = new List<VertexShape>();
+            HashSet<VertexShape> currentPath = new HashSet<VertexShape>();
+            List<VertexShape> pathList = new List<VertexShape>();
 
             foreach (var path in DFS(startNode, endNode))
             {
@@ -218,19 +219,18 @@ namespace VisioParse.ConsoleHost
             {
                 visited.Add(currentNode);
                 currentPath.Add(currentNode);
+                pathList.Add(currentNode);
 
                 if (currentNode == destinationNode)
                 {
-                    // reached the destination, record the current path
-                    yield return new List<VertexShape>(currentPath);
+                    yield return new List<VertexShape>(pathList);
                 }
                 else
                 {
                     foreach (var neighbor in graph.GetChildren(currentNode))
                     {
-                        if (!visited.Contains(neighbor))
+                        if (!currentPath.Contains(neighbor))
                         {
-                            // recursively explore the neighbor nodes
                             foreach (var path in DFS(neighbor, destinationNode))
                             {
                                 yield return path;
@@ -239,9 +239,8 @@ namespace VisioParse.ConsoleHost
                     }
                 }
 
-                // backtrack
-                visited.Remove(currentNode);
-                currentPath.RemoveAt(currentPath.Count - 1);
+                currentPath.Remove(currentNode);
+                pathList.RemoveAt(pathList.Count - 1);
             }
         }
 
