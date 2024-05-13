@@ -49,9 +49,6 @@ namespace VisioParse.ConsoleHost
             // this is used to assign the edge placements in the graph themselves using their stored data
             AssignEdges(pageEdges, graph);
 
-            // sometimes tables and other extra visual elements are added as shapes so remove them from the graph
-            graph.RemoveZeroDegreeNodes();
-
             return graph;
         }
 
@@ -254,6 +251,7 @@ namespace VisioParse.ConsoleHost
             });
         }
 
+        // On-Page References are the same as checkpoints
         public void ConnectReferenceShapes(DirectedMultiGraph<VertexShape, EdgeShape> graph, Page[] pageList)
         {
             var nodeOption = Callflow.Config.NodeOption;

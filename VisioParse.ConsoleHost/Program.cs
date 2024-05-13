@@ -71,6 +71,13 @@ namespace VisioParse.ConsoleHost
                         i++;
                     }
 
+                    PrintShapeInformation(multiPageGraph, pageList);
+
+                    multiPageGraph.RemoveZeroDegreeNodes();
+
+                    // get the configuration settings from the user before developing references and generating paths
+                    callflow.GenerateConfig();
+
                     // once all of the pages have added their graphs together, connect each of their reference shapes together to join desired page flows
                     graphBuilder.ConnectReferenceShapes(multiPageGraph, pageList);
 
@@ -183,7 +190,7 @@ namespace VisioParse.ConsoleHost
                 {
                     foreach (var path in FindPermutations(graph, startNode, endNode))
                     {
-                        allPaths.Add(path);
+                        allPaths.Add(new List<VertexShape>(path));
                         numPaths++;
                         PrintPathID(path, file, numPaths);
                     }
@@ -224,7 +231,7 @@ namespace VisioParse.ConsoleHost
 
                 if (currentNode == destinationNode)
                 {
-                    yield return new List<VertexShape>(pathList);
+                    yield return pathList;
                 }
                 else
                 {
@@ -343,6 +350,54 @@ namespace VisioParse.ConsoleHost
                 file.Write($"{node.Text} -> ");
             }
             file.WriteLine();
+        }
+
+        static void PrintShapeInformation(DirectedMultiGraph<VertexShape, EdgeShape> graph, Page[] pageList)
+        {
+            // check if there is a legend page to get the shape information from
+            var legend = pageList.FirstOrDefault(page => page.Name == "Legend");
+            if (legend != null)
+            {
+                Console.WriteLine("\nShape information from Legend Page:");
+                foreach(var node in legend.Graph.Vertices)
+                {
+                    Console.WriteLine($" MasterID: {node.MasterId}, Text: {node.Text}");
+                }
+            }
+            Console.WriteLine("\nAdditional possible node values: ");
+            
+            // find possible node values from in and out degrees
+            var startNodes = graph.Vertices.Where(vertex => graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0 && vertex.PageReference.Equals(""));
+            var endNodes = graph.Vertices.Where(vertex => graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0 && vertex.PageReference.Equals(""));
+
+            // match the texts to see if there are any matches for on-page references, has to be toListed or else the query will break during the following Except
+            var onPageReferences = graph.Vertices
+                                        .Where(node => startNodes.Select(sn => sn.Text)
+                                        .Intersect(endNodes.Select(en => en.Text))
+                                        .Contains(node.Text))
+                                        .ToList();
+
+            // start and end nodes with the same text are on-page references so remove them from the collection - this is an assumption but helps with clutter
+            startNodes = startNodes.Except(onPageReferences).ToList();
+            endNodes = endNodes.Except(onPageReferences).ToList();
+
+            Console.WriteLine("Possible start nodes:");
+            foreach (var node in startNodes)
+            {
+                Console.WriteLine($"MasterId: {node.MasterId}, Text: {node.Text}");
+            }
+
+            Console.WriteLine("\nPossible end nodes:");
+            foreach (var node in endNodes)
+            {
+                Console.WriteLine($"MasterId: {node.MasterId}, Text: {node.Text}");
+            }
+
+            Console.WriteLine("\nOn-page references:");
+            foreach (var node in onPageReferences)
+            {
+                Console.WriteLine($"MasterId: {node.MasterId}, Text: {node.Text}");
+            }
         }
     }
 }

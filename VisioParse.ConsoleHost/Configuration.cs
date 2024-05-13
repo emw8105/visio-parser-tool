@@ -20,7 +20,7 @@ namespace VisioParse.ConsoleHost
 
         public void ConfigurationSetup()
         {
-            Console.WriteLine("Please select a menu option:" +
+            Console.WriteLine("\nPlease select a menu option:" +
                 "\n1. Parse Visio information with specified start and end nodes  (more precise)" + // can ask user to use text or a master ID
                 "\n2. Parse Visio information indiscriminately  (less precise)");
             string? menuChoice = Console.ReadLine();

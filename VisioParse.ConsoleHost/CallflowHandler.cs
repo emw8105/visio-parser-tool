@@ -114,19 +114,6 @@ namespace VisioParse.ConsoleHost
             ZipPath = Path + @"Documents\" + FileName; // path to get the zipped file i.e. the visio
             ExtractPath = Path + @"extracted"; // path to extract to within console host file
 
-            // create output files
-            string pageInfoFilePath = System.IO.Path.Combine(Path, "pageInfo_" + fileNameWithoutExtension + ".txt");
-            File.WriteAllText(pageInfoFilePath, "Beginning output\n");
-            PageInfoFile = File.AppendText(pageInfoFilePath);
-
-            string pathsFilePath = System.IO.Path.Combine(Path, "paths_" + fileNameWithoutExtension + ".txt");
-            File.WriteAllText(pathsFilePath, "Beginning output\n");
-            PathOutputFile = File.AppendText(pathsFilePath);
-
-            pathsFilePath = System.IO.Path.Combine(Path, "minPaths_" + fileNameWithoutExtension + ".txt");
-            File.WriteAllText(pathsFilePath, "Beginning output\n");
-            MinPathOutputFile = File.AppendText(pathsFilePath);
-
             if (!File.Exists(ZipPath))
             {
                 Console.WriteLine($"The Visio file was not found in the Documents folder: {FileName}");
@@ -138,10 +125,6 @@ namespace VisioParse.ConsoleHost
             }
             else
             {
-                // generate a configuration for this parsing with options selected by the user
-                Config = new Configuration();
-                Config.ConfigurationSetup();
-
                 // extract the XML contents
                 Console.WriteLine("extracting file to " + ExtractPath);
                 try
@@ -159,7 +142,30 @@ namespace VisioParse.ConsoleHost
                     Console.WriteLine("Please make sure to close the Visio before parsing and ensure that it has been set to 'Copy if newer' in Visual Studio: ", ex);
                     Console.ReadLine(); // put here for inspection
                 }
+
+                // create output files
+                string pageInfoFilePath = System.IO.Path.Combine(Path, "pageInfo_" + fileNameWithoutExtension + ".txt");
+                File.WriteAllText(pageInfoFilePath, "Beginning output\n");
+                PageInfoFile = File.AppendText(pageInfoFilePath);
+
+                string pathsFilePath = System.IO.Path.Combine(Path, "paths_" + fileNameWithoutExtension + ".txt");
+                File.WriteAllText(pathsFilePath, "Beginning output\n");
+                PathOutputFile = File.AppendText(pathsFilePath);
+
+                pathsFilePath = System.IO.Path.Combine(Path, "minPaths_" + fileNameWithoutExtension + ".txt");
+                File.WriteAllText(pathsFilePath, "Beginning output\n");
+                MinPathOutputFile = File.AppendText(pathsFilePath);
             }
+        }
+
+        /// <summary>
+        /// Creates a configuration object that the user interracts with to generate parsing specifications
+        /// </summary>
+        public void GenerateConfig()
+        {
+            // generate a configuration for this parsing with options selected by the user
+            Config = new Configuration();
+            Config.ConfigurationSetup();
         }
 
         /// <summary>
@@ -199,10 +205,11 @@ namespace VisioParse.ConsoleHost
                 "2. Exit without deleting extracted files\n" +
                 "3. Delete the extracted/copied files");
 
-            bool valid = false;
-            string? input = Console.ReadLine();
+            bool valid;
             do
             {
+                valid = false;
+                string? input = Console.ReadLine();
                 switch (input)
                 {
                     // rezip the extracted files into a Visio, allow the user to delete again
