@@ -25,6 +25,7 @@ namespace VisioParse.ConsoleHost
             // use the callflow handler to manage file based setup and modifications, also for configuration management
             // upon construction will set up the output files and configuration settings, then extract the XML files from the desired Visio
             CallflowHandler callflow = new CallflowHandler();
+            callflow.Setup();
 
             if (callflow.FileName != string.Empty)
             {
@@ -239,6 +240,7 @@ namespace VisioParse.ConsoleHost
                     }
                 }
 
+                // backtrack
                 currentPath.Remove(currentNode);
                 pathList.RemoveAt(pathList.Count - 1);
             }
@@ -299,6 +301,17 @@ namespace VisioParse.ConsoleHost
 
 
         // wrapper function to print every path by calling the individual path print function
+        static void PrintAllPathID(List<List<VertexShape>> pathSet, StreamWriter file)
+        {
+            int count = 1;
+            foreach (var path in pathSet)
+            {
+                PrintPathID(path, file, count);
+                count++;
+            }
+        }
+
+        // print the path by printing the ID of each node in the path
         static void PrintPathID(List<VertexShape> path, StreamWriter file, int pathNumber)
         {
             file.Write($"{pathNumber}. ");
@@ -310,27 +323,7 @@ namespace VisioParse.ConsoleHost
             file.Flush();
         }
 
-        static void PrintAllPathID(List<List<VertexShape>> pathSet, StreamWriter file)
-        {
-            int count = 1;
-            foreach (var path in pathSet)
-            {
-                PrintPathID(path, file, count);
-                count++;
-            }
-        }
-
-
-        static void PrintPathText(List<VertexShape> path, StreamWriter file, int pathNumber)
-        {
-            file.Write($"{pathNumber}. ");
-            foreach (var node in path)
-            {
-                file.Write($"{node.Text} -> ");
-            }
-            file.WriteLine();
-        }
-
+        // wrapper function to print every path by calling the individual path print function
         static void PrintAllPathText(List<List<VertexShape>> pathSet, StreamWriter file)
         {
             int count = 1;
@@ -339,6 +332,17 @@ namespace VisioParse.ConsoleHost
                 PrintPathText(path, file, count);
                 count++;
             }
+        }
+
+        // print the path by printing the text of each node in the path
+        static void PrintPathText(List<VertexShape> path, StreamWriter file, int pathNumber)
+        {
+            file.Write($"{pathNumber}. ");
+            foreach (var node in path)
+            {
+                file.Write($"{node.Text} -> ");
+            }
+            file.WriteLine();
         }
     }
 }

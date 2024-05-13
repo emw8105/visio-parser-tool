@@ -19,42 +19,42 @@ namespace VisioParse.ConsoleHost
         /// <summary>
         /// The name of the visio file to parse which should be set manually
         /// </summary>
-        public string FileName { get; set; }
+        public string FileName { get; set; } = string.Empty;
 
         /// <summary>
         /// The base path to the solution repository
         /// </summary>
-        public string Path { get; set; }
+        public string Path { get; set; } = string.Empty;
 
         /// <summary>
         /// The path to the documents folder in the repository where the desired Visio can be found and unzipped
         /// </summary>
-        public string ZipPath { get; set; }
+        public string ZipPath { get; set; } = string.Empty;
 
         /// <summary>
         /// The path to create the extracted folder containing the unzipped XML contents of the Visio
         /// </summary>
-        public string ExtractPath { get; set; }
+        public string ExtractPath { get; set; } = string.Empty;
 
         /// <summary>
         /// An output file storing primarily shape info on pages
         /// </summary>
-        public StreamWriter PageInfoFile { get; set; }
+        public StreamWriter PageInfoFile { get; set; } = null!;
 
         /// <summary>
         /// An output file storing the exhaustive paths
         /// </summary>
-        public StreamWriter PathOutputFile { get; set; }
+        public StreamWriter PathOutputFile { get; set; } = null!;
 
         /// <summary>
         /// An output file storing the minimum paths
         /// </summary>
-        public StreamWriter MinPathOutputFile { get; set; }
+        public StreamWriter MinPathOutputFile { get; set; } = null!;
 
         /// <summary>
         /// A container for the configuration options desired by the user
         /// </summary>
-        public Configuration Config { get; set; }
+        public Configuration Config { get; set; } = null!;
 
 
         // example files from solution:
@@ -66,7 +66,7 @@ namespace VisioParse.ConsoleHost
 
         // best testcase if time permits: Parsable DCWater_IVR_Callflow v5.0 (Post Go -Live Kubra Replacement).vsdx
         // best testcase on short notice: Parsable Inbound Routing Design v1.18.vsdx
-        public CallflowHandler()
+        public void Setup()
         {
             // set this value prior to running program based on the desired visio
             //FileName = "Simple Test.vsdx";
