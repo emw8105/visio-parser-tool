@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\..\..\..\..\Program Files\dotnet\sdk\8.0.200\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.ImportWorkloads.targets" Link="Microsoft.NET.Sdk.ImportWorkloads.targets" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Documents\Parsable DCWater_IVR_Callflow v5.0 %28Post Go -Live Kubra Replacement%29.vsdx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

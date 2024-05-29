@@ -11,6 +11,7 @@ using System.Reflection.Metadata;
 using System.IO.Compression;
 using System.Drawing;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Linq.Expressions;
 
 // take master id out of off-page references, fix reference algorithm by removing parallel hashmap, update readme, update documentation
 
@@ -184,18 +185,28 @@ namespace VisioParse.ConsoleHost
             int numPaths = 0;
 
             // find every path from every start node to every end node
-            foreach (var startNode in startNodes)
+            try 
             {
-                foreach (var endNode in endNodes)
+                foreach (var startNode in startNodes)
                 {
-                    foreach (var path in FindPermutations(graph, startNode, endNode))
+                    foreach (var endNode in endNodes)
                     {
-                        allPaths.Add(new List<VertexShape>(path));
-                        numPaths++;
-                        PrintPathID(path, file, numPaths);
+                        // Console.WriteLine(FindPermutations(graph, startNode, endNode).Count());
+                        foreach (var path in FindPermutations(graph, startNode, endNode))
+                        {
+                            allPaths.Add(path);
+                            ++numPaths;
+                            Console.WriteLine($"Path {numPaths} generated"); // DEBUG PRINTS
+                            PrintPathID(path, file, numPaths);
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+            
 
             // if (allPaths.Count > 0)
             // {
@@ -213,25 +224,43 @@ namespace VisioParse.ConsoleHost
         // method for finding all of the paths between every starting vertex to every ending vertex
         public static int i = 0;
         static IEnumerable<List<VertexShape>> FindPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, VertexShape startNode, VertexShape endNode)
+        
         {
-            HashSet<VertexShape> visited = new HashSet<VertexShape>();
             HashSet<VertexShape> currentPath = new HashSet<VertexShape>();
             List<VertexShape> pathList = new List<VertexShape>();
-
+            int dfsCounter = 0;
+            Console.WriteLine($"Finding paths between {startNode.Id} and {endNode.Id}");
+            Dictionary<VertexShape, int> visitCount = new Dictionary<VertexShape, int>();
             foreach (var path in DFS(startNode, endNode))
             {
                 yield return path;
             }
 
+            
             IEnumerable<List<VertexShape>> DFS(VertexShape currentNode, VertexShape destinationNode)
             {
-                visited.Add(currentNode);
+                // Increment visit count for the current node
+                if (visitCount.ContainsKey(currentNode))
+                {
+                    visitCount[currentNode]++;
+                }
+                else
+                {
+                    visitCount[currentNode] = 1;
+                }
+
+                // DEBUG PRINTS
+                dfsCounter++;
+                Console.WriteLine($"DFS call count: {dfsCounter}");
+
+                // currentPath is used for quick lookup to prevent revisiting nodes
+                // pathList is used to keep track of the order of nodes visited
                 currentPath.Add(currentNode);
                 pathList.Add(currentNode);
 
                 if (currentNode == destinationNode)
                 {
-                    yield return pathList;
+                    yield return new List<VertexShape>(pathList);
                 }
                 else
                 {
@@ -239,9 +268,21 @@ namespace VisioParse.ConsoleHost
                     {
                         if (!currentPath.Contains(neighbor))
                         {
-                            foreach (var path in DFS(neighbor, destinationNode))
+                                    // DEBUG PRINTS
+                                    if(neighbor.PageName != currentNode.PageName)
+                                    {
+                                        Console.WriteLine("Jumping to page " + neighbor.PageName + $" to visit neighbor {neighbor.Id} of node {currentNode.Id}");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Visiting neighbor {neighbor.Id} of node {currentNode.Id} on page {neighbor.PageName}");
+                                    }
+                            if(!visitCount.ContainsKey(neighbor) || visitCount[neighbor] < 2)
                             {
-                                yield return path;
+                                foreach (var path in DFS(neighbor, destinationNode))
+                                {
+                                    yield return path;
+                                }
                             }
                         }
                     }
@@ -316,6 +357,7 @@ namespace VisioParse.ConsoleHost
                 PrintPathID(path, file, count);
                 count++;
             }
+            file.Flush();
         }
 
         // print the path by printing the ID of each node in the path
@@ -339,10 +381,11 @@ namespace VisioParse.ConsoleHost
                 PrintPathText(path, file, count);
                 count++;
             }
+            file.Flush();
         }
 
         // print the path by printing the text of each node in the path
-        static void PrintPathText(List<VertexShape> path, StreamWriter file, int pathNumber)
+        async static void PrintPathText(List<VertexShape> path, StreamWriter file, int pathNumber)
         {
             file.Write($"{pathNumber}. ");
             foreach (var node in path)
@@ -350,6 +393,7 @@ namespace VisioParse.ConsoleHost
                 file.Write($"{node.Text} -> ");
             }
             file.WriteLine();
+            file.Flush();
         }
 
         static void PrintShapeInformation(DirectedMultiGraph<VertexShape, EdgeShape> graph, Page[] pageList)
@@ -367,8 +411,8 @@ namespace VisioParse.ConsoleHost
             Console.WriteLine("\nAdditional possible node values: ");
             
             // find possible node values from in and out degrees
-            var startNodes = graph.Vertices.Where(vertex => graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0 && vertex.PageReference.Equals(""));
-            var endNodes = graph.Vertices.Where(vertex => graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0 && vertex.PageReference.Equals(""));
+            var startNodes = graph.Vertices.Where(vertex => graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0 && vertex.PageReference.Equals("") && vertex.MasterId != null);
+            var endNodes = graph.Vertices.Where(vertex => graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0 && vertex.PageReference.Equals("") && vertex.MasterId != null);
 
             // match the texts to see if there are any matches for on-page references, has to be toListed or else the query will break during the following Except
             var onPageReferences = graph.Vertices
@@ -393,7 +437,7 @@ namespace VisioParse.ConsoleHost
                 Console.WriteLine($"MasterId: {node.MasterId}, Text: {node.Text}");
             }
 
-            Console.WriteLine("\nOn-page references:");
+            Console.WriteLine("\nPossible On-page references:");
             foreach (var node in onPageReferences)
             {
                 Console.WriteLine($"MasterId: {node.MasterId}, Text: {node.Text}");
