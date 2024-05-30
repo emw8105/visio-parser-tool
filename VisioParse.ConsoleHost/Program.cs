@@ -182,6 +182,7 @@ namespace VisioParse.ConsoleHost
 
             // list containing the paths containing each node
             var allPaths = new List<List<VertexShape>>();
+            var visitedNodes = new HashSet<VertexShape>();
             int numPaths = 0;
 
             // find every path from every start node to every end node
@@ -192,7 +193,7 @@ namespace VisioParse.ConsoleHost
                     foreach (var endNode in endNodes)
                     {
                         // Console.WriteLine(FindPermutations(graph, startNode, endNode).Count());
-                        foreach (var path in FindPermutations(graph, startNode, endNode))
+                        foreach (var path in FindPermutations(graph, startNode, endNode, visitedNodes))
                         {
                             allPaths.Add(path);
                             ++numPaths;
@@ -207,26 +208,21 @@ namespace VisioParse.ConsoleHost
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
             
-
-            // if (allPaths.Count > 0)
-            // {
-            //     file.WriteLine("Paths:");
-            //     PrintAllPathID(allPaths, file);
-            // }
             if(allPaths.Count == 0)
             {
                 file.WriteLine($"No test cases to be generated for this page");
             }
 
+            double proportionVisited = (double)visitedNodes.Count / graph.Vertices.Count*100;
+            Console.WriteLine($"Proportion of nodes visited: {proportionVisited}%");
             return allPaths;
         }
 
         // method for finding all of the paths between every starting vertex to every ending vertex
         public static int i = 0;
-        static IEnumerable<List<VertexShape>> FindPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, VertexShape startNode, VertexShape endNode)
-        
+        static IEnumerable<List<VertexShape>> FindPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, VertexShape startNode, VertexShape endNode, HashSet<VertexShape> visitedNodes)
+
         {
-            HashSet<VertexShape> currentPath = new HashSet<VertexShape>();
             List<VertexShape> pathList = new List<VertexShape>();
             int dfsCounter = 0;
             Console.WriteLine($"Finding paths between {startNode.Id} and {endNode.Id}");
@@ -236,7 +232,7 @@ namespace VisioParse.ConsoleHost
                 yield return path;
             }
 
-            
+
             IEnumerable<List<VertexShape>> DFS(VertexShape currentNode, VertexShape destinationNode)
             {
                 // Increment visit count for the current node
@@ -247,15 +243,11 @@ namespace VisioParse.ConsoleHost
                 else
                 {
                     visitCount[currentNode] = 1;
+                    visitedNodes.Add(currentNode);
                 }
-
-                // DEBUG PRINTS
-                dfsCounter++;
-                Console.WriteLine($"DFS call count: {dfsCounter}");
 
                 // currentPath is used for quick lookup to prevent revisiting nodes
                 // pathList is used to keep track of the order of nodes visited
-                currentPath.Add(currentNode);
                 pathList.Add(currentNode);
 
                 if (currentNode == destinationNode)
@@ -264,38 +256,29 @@ namespace VisioParse.ConsoleHost
                 }
                 else
                 {
-                    foreach (var neighbor in graph.GetChildren(currentNode))
+                    // Sort neighbors so that unvisited neighbors are visited first
+                    var neighbors = graph.GetChildren(currentNode).OrderBy(n => visitCount.ContainsKey(n) ? visitCount[n] : 0).ToList();
+
+                    foreach (var neighbor in neighbors)
                     {
-                        if (!currentPath.Contains(neighbor))
+                        // If the neighbor is not in the current path or has been visited less than twice
+                        if ((!visitCount.ContainsKey(neighbor) || visitCount[neighbor] < 2))
                         {
-                                    // DEBUG PRINTS
-                                    if(neighbor.PageName != currentNode.PageName)
-                                    {
-                                        Console.WriteLine("Jumping to page " + neighbor.PageName + $" to visit neighbor {neighbor.Id} of node {currentNode.Id}");
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"Visiting neighbor {neighbor.Id} of node {currentNode.Id} on page {neighbor.PageName}");
-                                    }
-                            if(!visitCount.ContainsKey(neighbor) || visitCount[neighbor] < 2)
+                            foreach (var path in DFS(neighbor, destinationNode))
                             {
-                                foreach (var path in DFS(neighbor, destinationNode))
-                                {
-                                    yield return path;
-                                }
+                                yield return path;
                             }
                         }
                     }
                 }
 
                 // backtrack
-                currentPath.Remove(currentNode);
                 pathList.RemoveAt(pathList.Count - 1);
             }
         }
 
-        // find the minimum number of paths needed to cover every edge by picking the path that covers the most amount of uncovered edges at every iteration until all edges covered
-        static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
+            // find the minimum number of paths needed to cover every edge by picking the path that covers the most amount of uncovered edges at every iteration until all edges covered
+            static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
         {
             // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
             var uniqueEdges = new HashSet<EdgeShape>(graph.Edges.Distinct());
