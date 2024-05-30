@@ -138,6 +138,8 @@ namespace VisioParse.ConsoleHost
                 Name = page.Attribute("Name").Value,
             };
 
+
+        // This isn't the most ideal way to determine what the user specifications are but it works for now
         static void GetSpecifiedNodes(DirectedMultiGraph<VertexShape, EdgeShape> graph, string nodeOption, string? startNodeContent, string? endNodeContent, out IEnumerable<VertexShape> startNodes, out IEnumerable<VertexShape> endNodes)
         {
             switch (nodeOption.Substring(0, 1))
@@ -192,12 +194,10 @@ namespace VisioParse.ConsoleHost
                 {
                     foreach (var endNode in endNodes)
                     {
-                        // Console.WriteLine(FindPermutations(graph, startNode, endNode).Count());
                         foreach (var path in FindPermutations(graph, startNode, endNode, visitedNodes))
                         {
                             allPaths.Add(path);
                             ++numPaths;
-                            Console.WriteLine($"Path {numPaths} generated"); // DEBUG PRINTS
                             PrintPathID(path, file, numPaths);
                         }
                     }
@@ -225,39 +225,48 @@ namespace VisioParse.ConsoleHost
         static IEnumerable<List<VertexShape>> FindPermutations(DirectedMultiGraph<VertexShape, EdgeShape> graph, VertexShape startNode, VertexShape endNode, HashSet<VertexShape> visitedNodes)
 
         {
-            List<VertexShape> pathList = new List<VertexShape>();
-            int dfsCounter = 0;
             Console.WriteLine($"Finding paths between {startNode.Id} and {endNode.Id}");
+
+            // pathList is the list of vertices in the current path, visitCount is a dictionary that keeps track of how many times a node has been visited
+            List<VertexShape> pathList = new List<VertexShape>();
             Dictionary<VertexShape, int> visitCount = new Dictionary<VertexShape, int>();
+
             foreach (var path in DFS(startNode, endNode))
             {
                 yield return path;
             }
 
-
+            // depth first search algorithm to find all paths between the start and end nodes, tracks the visitation count of each node to prevent infinite loops
+            // uses a stack to keep track of the current path, ran with a stack/while loop to avoid stack overflow from recursion
             IEnumerable<List<VertexShape>> DFS(VertexShape startNode, VertexShape destinationNode)
             {
                 var stack = new Stack<List<VertexShape>>();
                 stack.Push(new List<VertexShape> { startNode });
 
+                // while there are still paths to explore
                 while (stack.Count > 0)
                 {
                     var path = stack.Pop();
                     var currentNode = path.Last();
 
+                    // if the current node is the destination node, return the path, otherwise explore the neighbors
                     if (currentNode == destinationNode)
                     {
                         yield return new List<VertexShape>(path);
                     }
                     else
                     {
+                        // get the neighbors of the current node ordered by the visit count to prioritize nodes that haven't been visited as frequently
                         var neighbors = graph.GetChildren(currentNode).OrderBy(n => visitCount.ContainsKey(n) ? visitCount[n] : 0).ToList();
 
                         foreach (var neighbor in neighbors)
                         {
+                            // if the neighbor hasn't been visited more than half of the total nodes, add it to the path
                             if (!path.Contains(neighbor) && (!visitCount.ContainsKey(neighbor) || visitCount[neighbor] < graph.Vertices.Count / 2))
                             {
                                 var newPath = new List<VertexShape>(path) { neighbor };
+
+                                // increment the visit count of the neighbor
                                 if (visitCount.ContainsKey(neighbor))
                                 {
                                     visitCount[neighbor]++;
@@ -265,6 +274,8 @@ namespace VisioParse.ConsoleHost
                                 else
                                 {
                                     visitCount[neighbor] = 1;
+
+                                    // add the neighbor to the visited nodes set if it hasn't been visited yet
                                     if (!visitedNodes.Contains(neighbor))
                                     {
                                         visitedNodes.Add(neighbor);
