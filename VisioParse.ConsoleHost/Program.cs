@@ -186,7 +186,7 @@ namespace VisioParse.ConsoleHost
             int numPaths = 0;
 
             // find every path from every start node to every end node
-            try 
+            try
             {
                 foreach (var startNode in startNodes)
                 {
@@ -207,14 +207,16 @@ namespace VisioParse.ConsoleHost
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
-            
-            if(allPaths.Count == 0)
+
+            if (allPaths.Count == 0)
             {
                 file.WriteLine($"No test cases to be generated for this page");
             }
 
-            double proportionVisited = (double)visitedNodes.Count / graph.Vertices.Count*100;
+            Console.WriteLine($"\nVisited {visitedNodes.Count} nodes of {graph.Vertices.Count} total");
+            double proportionVisited = (double)visitedNodes.Count / graph.Vertices.Count * 100;
             Console.WriteLine($"Proportion of nodes visited: {proportionVisited}%");
+            
             return allPaths;
         }
 
@@ -233,52 +235,51 @@ namespace VisioParse.ConsoleHost
             }
 
 
-            IEnumerable<List<VertexShape>> DFS(VertexShape currentNode, VertexShape destinationNode)
+            IEnumerable<List<VertexShape>> DFS(VertexShape startNode, VertexShape destinationNode)
             {
-                // Increment visit count for the current node
-                if (visitCount.ContainsKey(currentNode))
-                {
-                    visitCount[currentNode]++;
-                }
-                else
-                {
-                    visitCount[currentNode] = 1;
-                    visitedNodes.Add(currentNode);
-                }
+                var stack = new Stack<List<VertexShape>>();
+                stack.Push(new List<VertexShape> { startNode });
 
-                // currentPath is used for quick lookup to prevent revisiting nodes
-                // pathList is used to keep track of the order of nodes visited
-                pathList.Add(currentNode);
-
-                if (currentNode == destinationNode)
+                while (stack.Count > 0)
                 {
-                    yield return new List<VertexShape>(pathList);
-                }
-                else
-                {
-                    // Sort neighbors so that unvisited neighbors are visited first
-                    var neighbors = graph.GetChildren(currentNode).OrderBy(n => visitCount.ContainsKey(n) ? visitCount[n] : 0).ToList();
+                    var path = stack.Pop();
+                    var currentNode = path.Last();
 
-                    foreach (var neighbor in neighbors)
+                    if (currentNode == destinationNode)
                     {
-                        // If the neighbor is not in the current path or has been visited less than twice
-                        if ((!visitCount.ContainsKey(neighbor) || visitCount[neighbor] < 2))
+                        yield return new List<VertexShape>(path);
+                    }
+                    else
+                    {
+                        var neighbors = graph.GetChildren(currentNode).OrderBy(n => visitCount.ContainsKey(n) ? visitCount[n] : 0).ToList();
+
+                        foreach (var neighbor in neighbors)
                         {
-                            foreach (var path in DFS(neighbor, destinationNode))
+                            if (!path.Contains(neighbor) && (!visitCount.ContainsKey(neighbor) || visitCount[neighbor] < graph.Vertices.Count / 2))
                             {
-                                yield return path;
+                                var newPath = new List<VertexShape>(path) { neighbor };
+                                if (visitCount.ContainsKey(neighbor))
+                                {
+                                    visitCount[neighbor]++;
+                                }
+                                else
+                                {
+                                    visitCount[neighbor] = 1;
+                                    if (!visitedNodes.Contains(neighbor))
+                                    {
+                                        visitedNodes.Add(neighbor);
+                                    }
+                                }
+                                stack.Push(newPath);
                             }
                         }
                     }
                 }
-
-                // backtrack
-                pathList.RemoveAt(pathList.Count - 1);
             }
         }
 
-            // find the minimum number of paths needed to cover every edge by picking the path that covers the most amount of uncovered edges at every iteration until all edges covered
-            static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
+        // find the minimum number of paths needed to cover every edge by picking the path that covers the most amount of uncovered edges at every iteration until all edges covered
+        static List<List<VertexShape>> GetMinimumPaths(DirectedMultiGraph<VertexShape, EdgeShape> graph, List<List<VertexShape>> allPaths, StreamWriter file)
         {
             // get unique edges from the graph and add them to the covered edges as the minimal paths become concrete
             var uniqueEdges = new HashSet<EdgeShape>(graph.Edges.Distinct());
@@ -386,13 +387,13 @@ namespace VisioParse.ConsoleHost
             if (legend != null)
             {
                 Console.WriteLine("\nShape information from Legend Page:");
-                foreach(var node in legend.Graph.Vertices)
+                foreach (var node in legend.Graph.Vertices)
                 {
                     Console.WriteLine($" MasterID: {node.MasterId}, Text: {node.Text}");
                 }
             }
             Console.WriteLine("\nAdditional possible node values: ");
-            
+
             // find possible node values from in and out degrees
             var startNodes = graph.Vertices.Where(vertex => graph.GetInDegree(vertex) == 0 && graph.GetOutDegree(vertex) > 0 && vertex.PageReference.Equals("") && vertex.MasterId != null);
             var endNodes = graph.Vertices.Where(vertex => graph.GetOutDegree(vertex) == 0 && graph.GetInDegree(vertex) > 0 && vertex.PageReference.Equals("") && vertex.MasterId != null);
